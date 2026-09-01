@@ -69,44 +69,61 @@ export async function checkAllDivergences(plan: PairStrategyPlan, days: number =
   const sinceDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
   const comparisons: Comparison[] = [];
 
+  const combos: { pair: string; strategyId: number; strategyName: string; tf: string }[] = [];
   for (const [pair, strategyTimeframes] of Object.entries(plan)) {
     for (const [strategyIdStr, timeframes] of Object.entries(strategyTimeframes)) {
       const strategyId = Number(strategyIdStr);
       const strat = STRATEGY_DEFS.find((s) => s.id === strategyId);
       if (!strat) continue;
-
-      for (const tf of timeframes) {
-        const baseline = await getBacktestBaseline(strategyId, pair, tf);
-
-        const liveSignals = await prisma.signal.findMany({
-          where: {
-            strategyId, pair, timeframe: tf, source: 'live',
-            status: { in: ['WIN', 'LOSS'] },
-            createdAt: { gte: sinceDate },
-          },
-        });
-        const liveMetrics = computeMetrics(liveSignals as TradeLike[]);
-
-        const hasEnoughLiveData = liveMetrics.totalTrades >= MIN_LIVE_TRADES;
-        const pfGap = baseline ? liveMetrics.profitFactor - baseline.pf : null;
-        const divergentVsBaseline = hasEnoughLiveData && pfGap !== null && pfGap < PF_GAP_THRESHOLD;
-        const divergentNoBaseline = hasEnoughLiveData && !baseline && liveMetrics.profitFactor < ABSOLUTE_PF_FLOOR_NO_BASELINE;
-        const divergent = divergentVsBaseline || divergentNoBaseline;
-
-        comparisons.push({
-          pair, strategyId, strategyName: strat.name, timeframe: tf,
-          backtestPF: baseline?.pf ?? null,
-          backtestSource: baseline?.source ?? null,
-          liveTotalTrades: liveMetrics.totalTrades,
-          livePF: liveMetrics.profitFactor,
-          liveExpectancy: liveMetrics.expectancy,
-          hasEnoughLiveData,
-          divergent,
-          usedAbsoluteFallback: divergentNoBaseline,
-        });
-      }
+      for (const tf of timeframes) combos.push({ pair, strategyId, strategyName: strat.name, tf });
     }
   }
+
+  // Sequencial aqui era 2-3 idas-e-voltas ao banco POR combinação — com o
+  // banco (Supabase, São Paulo) num continente diferente da função
+  // (Vercel, EUA), isso sozinho já passava dos 60s de limite de função
+  // serverless numa conta com ~25+ combinações ao vivo. São só leituras
+  // (sem chamada à Binance aqui), então dá pra usar um teto de
+  // concorrência maior que o de lib/analysis-engine.ts.
+  const DIVERGENCE_CHECK_CONCURRENCY = 10;
+  let cursor = 0;
+  async function worker() {
+    while (cursor < combos.length) {
+      const { pair, strategyId, strategyName, tf } = combos[cursor++];
+      const baseline = await getBacktestBaseline(strategyId, pair, tf);
+
+      const liveSignals = await prisma.signal.findMany({
+        where: {
+          strategyId, pair, timeframe: tf, source: 'live',
+          status: { in: ['WIN', 'LOSS'] },
+          createdAt: { gte: sinceDate },
+        },
+      });
+      const liveMetrics = computeMetrics(liveSignals as TradeLike[]);
+
+      const hasEnoughLiveData = liveMetrics.totalTrades >= MIN_LIVE_TRADES;
+      const pfGap = baseline ? liveMetrics.profitFactor - baseline.pf : null;
+      const divergentVsBaseline = hasEnoughLiveData && pfGap !== null && pfGap < PF_GAP_THRESHOLD;
+      const divergentNoBaseline = hasEnoughLiveData && !baseline && liveMetrics.profitFactor < ABSOLUTE_PF_FLOOR_NO_BASELINE;
+      const divergent = divergentVsBaseline || divergentNoBaseline;
+
+      comparisons.push({
+        pair, strategyId, strategyName, timeframe: tf,
+        backtestPF: baseline?.pf ?? null,
+        backtestSource: baseline?.source ?? null,
+        liveTotalTrades: liveMetrics.totalTrades,
+        livePF: liveMetrics.profitFactor,
+        liveExpectancy: liveMetrics.expectancy,
+        hasEnoughLiveData,
+        divergent,
+        usedAbsoluteFallback: divergentNoBaseline,
+      });
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(DIVERGENCE_CHECK_CONCURRENCY, combos.length) }, () => worker())
+  );
 
   return comparisons;
 }
