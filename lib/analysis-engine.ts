@@ -73,6 +73,14 @@ export function buildPairStrategyPlan(settings: {
  * permitidos pra aquela combinação. Retorna os novos sinais encontrados
  * (ainda não salvos no banco).
  */
+// Quantas combinações rodam ao mesmo tempo em generateSignals/closeTriggeredSignals.
+// Descoberto em produção (01/09/2026): sequencial, uma combinação de cada
+// vez, estourava os 60s de limite de uma função serverless (Vercel Hobby)
+// assim que o plano tinha ~25+ combinações — cada uma faz pelo menos uma
+// chamada de rede à Binance. Um teto (em vez de paralelo irrestrito) evita
+// martelar a Binance com dezenas de chamadas simultâneas de uma vez.
+const SIGNAL_GENERATION_CONCURRENCY = 6;
+
 export async function generateSignals(plan: PairStrategyPlan): Promise<SignalData[]> {
   const newSignals: SignalData[] = [];
 
@@ -84,29 +92,42 @@ export async function generateSignals(plan: PairStrategyPlan): Promise<SignalDat
   const { getPausedComboKeys } = await import('@/lib/divergence-check');
   const pausedCombos = await getPausedComboKeys().catch(() => new Set<string>());
 
+  const combos: { pair: string; strategyId: number; tf: string }[] = [];
   for (const [pair, strategyTimeframes] of Object.entries(plan)) {
     for (const [strategyIdStr, timeframes] of Object.entries(strategyTimeframes)) {
       const strategyId = Number(strategyIdStr);
       const strat = STRATEGY_DEFS.find((s) => s.id === strategyId);
       if (!strat) continue;
-
       for (const tf of timeframes) {
         if (pausedCombos.has(`${strategyId}|${pair}|${tf}`)) continue;
-
-        try {
-          let signal: SignalData | null = null;
-          if (strat.id === 4) {
-            signal = await (strat.analyze as any)(pair);
-          } else {
-            signal = await (strat.analyze as any)(pair, tf);
-          }
-          if (signal && (await passesLiveRegimeGate(strategyId, pair))) newSignals.push(signal);
-        } catch (e: any) {
-          console.error(`Strategy ${strat.id} error for ${pair}/${tf}:`, e?.message);
-        }
+        combos.push({ pair, strategyId, tf });
       }
     }
   }
+
+  let cursor = 0;
+  async function worker() {
+    while (cursor < combos.length) {
+      const { pair, strategyId, tf } = combos[cursor++];
+      const strat = STRATEGY_DEFS.find((s) => s.id === strategyId);
+      if (!strat) continue;
+      try {
+        let signal: SignalData | null = null;
+        if (strat.id === 4) {
+          signal = await (strat.analyze as any)(pair);
+        } else {
+          signal = await (strat.analyze as any)(pair, tf);
+        }
+        if (signal && (await passesLiveRegimeGate(strategyId, pair))) newSignals.push(signal);
+      } catch (e: any) {
+        console.error(`Strategy ${strat.id} error for ${pair}/${tf}:`, e?.message);
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(SIGNAL_GENERATION_CONCURRENCY, combos.length) }, () => worker())
+  );
 
   return newSignals;
 }

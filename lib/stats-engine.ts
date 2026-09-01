@@ -33,38 +33,50 @@ export async function closeTriggeredSignals(): Promise<{
   let expired = 0;
   const closedSignals: Array<{ signal: any; outcome: 'WIN' | 'LOSS' }> = [];
 
-  for (const signal of pending) {
-    const ageMs = Date.now() - new Date(signal.createdAt).getTime();
-    const ageDays = ageMs / (1000 * 60 * 60 * 24);
+  // Mesmo teto de concorrência de lib/analysis-engine.ts (generateSignals) —
+  // sequencial aqui também estourava o limite de tempo de função serverless
+  // assim que havia sinal pendente suficiente pra checar.
+  let cursor = 0;
+  async function worker() {
+    while (cursor < pending.length) {
+      const signal = pending[cursor++];
+      const ageMs = Date.now() - new Date(signal.createdAt).getTime();
+      const ageDays = ageMs / (1000 * 60 * 60 * 24);
 
-    // Busca candles de 15m desde a criação do sinal para checar, em ordem
-    // cronológica, se o stop ou o alvo foi tocado primeiro.
-    const klines = await getKlinesSince(signal.pair, signal.createdAt);
-    const outcome = evaluateOutcome(signal, klines);
+      // Busca candles de 15m desde a criação do sinal para checar, em ordem
+      // cronológica, se o stop ou o alvo foi tocado primeiro.
+      const klines = await getKlinesSince(signal.pair, signal.createdAt);
+      const outcome = evaluateOutcome(signal, klines);
 
-    if (outcome) {
-      const updated = await prisma.signal.update({
-        where: { id: signal.id },
-        data: {
-          status: outcome.status,
-          result: outcome.status,
-          pnlPercent: outcome.pnlPercent,
-          closedAt: outcome.closedAt,
-        },
-      });
-      closed++;
-      closedSignals.push({ signal: updated, outcome: outcome.status });
-      continue;
-    }
+      if (outcome) {
+        const updated = await prisma.signal.update({
+          where: { id: signal.id },
+          data: {
+            status: outcome.status,
+            result: outcome.status,
+            pnlPercent: outcome.pnlPercent,
+            closedAt: outcome.closedAt,
+          },
+        });
+        closed++;
+        closedSignals.push({ signal: updated, outcome: outcome.status });
+        continue;
+      }
 
-    if (ageDays > MAX_SIGNAL_AGE_DAYS) {
-      await prisma.signal.update({
-        where: { id: signal.id },
-        data: { status: 'EXPIRADO', result: 'EXPIRADO', closedAt: new Date() },
-      });
-      expired++;
+      if (ageDays > MAX_SIGNAL_AGE_DAYS) {
+        await prisma.signal.update({
+          where: { id: signal.id },
+          data: { status: 'EXPIRADO', result: 'EXPIRADO', closedAt: new Date() },
+        });
+        expired++;
+      }
     }
   }
+
+  const CLOSE_SIGNALS_CONCURRENCY = 6;
+  await Promise.all(
+    Array.from({ length: Math.min(CLOSE_SIGNALS_CONCURRENCY, pending.length) }, () => worker())
+  );
 
   return { closed, expired, closedSignals };
 }
