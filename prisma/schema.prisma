@@ -3,8 +3,13 @@ generator client {
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+    provider  = "postgresql"
+    url       = env("DATABASE_URL")
+    // Supabase: DATABASE_URL usa o pooler (pgbouncer, porta 6543) pra
+    // consulta normal; DIRECT_URL usa a porta 5432 direta, exigida pelo
+    // Prisma pra criar/alterar tabelas (db push, migrate) — o pooler em
+    // modo transação não suporta prepared statements.
+    directUrl = env("DIRECT_URL")
 }
 
 model User {
