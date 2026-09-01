@@ -1,0 +1,31 @@
+name: Robô Trade — ciclo do agendador
+
+# Chama a rota protegida app/api/cron/run-cycle a cada 15 minutos — faz o
+# mesmo que scripts/scheduler.ts faria rodando localmente, mas sem
+# precisar de nenhum processo seu ligado 24/7. Requer o app publicado
+# (ex: Vercel) e dois secrets configurados no repositório
+# (Settings → Secrets and variables → Actions):
+#   APP_URL      = https://seu-app.vercel.app  (sem barra no final)
+#   CRON_SECRET  = o mesmo valor configurado como env var CRON_SECRET no
+#                  seu deploy (Vercel → Settings → Environment Variables)
+#
+# Observação sobre o agendamento do GitHub Actions: o cron deles não é
+# preciso no minuto exato (pode atrasar alguns minutos em horários de
+# pico), e workflows agendados são desativados automaticamente se o
+# repositório ficar 60 dias sem nenhum commit — nesse caso é só reativar
+# manualmente na aba Actions.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {} # permite rodar manualmente pela aba Actions, pra testar
+
+jobs:
+  run-cycle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chamar rota do ciclo
+        run: |
+          curl --fail --silent --show-error \
+            --max-time 55 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/run-cycle"

@@ -1,0 +1,269 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("user")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  settings      UserSettings?
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model UserSettings {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailAlerts         Boolean  @default(true)
+  alertEmail          String?  
+  telegramAlerts      Boolean  @default(false)
+  telegramChatId      String?
+  telegramStrategies  Int[]    @default([1, 2, 3, 4, 5, 6])
+  monitoredPairs      String[] @default(["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"])
+  enabledStrategies   Int[]    @default([1, 2, 3, 4, 5, 6])
+  emailStrategies     Int[]    @default([1, 2, 3, 4, 5, 6])
+  // Mapa opcional { "BTCUSDT": [1,2,4], ... } — quando um par tem entrada
+  // aqui, ela restringe/substitui enabledStrategies só pra esse par. Pares
+  // sem entrada continuam usando enabledStrategies normalmente (compatível
+  // com quem configurou antes dessa funcionalidade existir).
+  pairStrategies      Json?
+  // Mapa opcional { "ADAUSDT": { "5": ["5m"] }, ... } — restringe quais
+  // timeframes de uma estratégia específica rodam pra um par específico
+  // (ex: rodar Reversão após Liquidação só em 5m pra essa moeda, mesmo
+  // a estratégia suportando 5m e 15m). Ausente = todos os timeframes
+  // padrão da estratégia continuam valendo (retrocompatível).
+  pairStrategyTimeframes Json?
+  dayTradeStart       String   @default("09:00")
+  dayTradeEnd         String   @default("18:00")
+  tradeMode           String   @default("both")
+  // Usados pela calculadora de tamanho de posição (Dashboard) — só
+  // informativo, o robô nunca executa nada sozinho.
+  accountCapital      Float?
+  riskPerTradePercent Float    @default(0.5)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Signal {
+  id              String   @id @default(cuid())
+  strategyId      Int
+  strategyName    String
+  pair            String
+  direction       String
+  timeframe       String
+  mode            String
+  entryPrice      Float
+  target1         Float
+  target2         Float
+  stopLoss        Float
+  leverage        String
+  confidence      Float
+  reason          String   @db.Text
+  status          String   @default("PENDENTE")
+  result          String?  
+  pnlPercent      Float?   
+  source          String   @default("live") // "live" = gerado pelo robô | "seed"/"demo" = exemplo ilustrativo, nunca entra nas estatísticas
+  target2Reached  Boolean  @default(false)  // alvo 2 é informativo — não muda WIN/LOSS, só dispara uma notificação extra
+  createdAt       DateTime @default(now())
+  closedAt        DateTime?
+
+  @@index([strategyId])
+  @@index([pair])
+  @@index([createdAt])
+  @@index([status])
+  @@index([source])
+}
+
+model StrategyStats {
+  id              String   @id @default(cuid())
+  strategyId      Int      @unique
+  strategyName    String
+  description     String   @db.Text
+  winRate         Float
+  payoff          Float
+  profitFactor    Float
+  maxDrawdown     Float
+  expectancy      Float
+  bestAssets      String[]
+  bestHours       String[]
+  bestTimeframes  String[]
+  totalTrades     Int      @default(0)
+  wins            Int      @default(0)
+  losses          Int      @default(0)
+  updatedAt       DateTime @updatedAt
+}
+
+// Resultado agregado de cada combinação estratégia×moeda×timeframe testada
+// pelo scanner em massa (scripts/backtest-scan.ts). Guardar em vez de só
+// mostrar na tela permite rodar o scan uma vez (pode levar bastante tempo)
+// e consultar/re-ordenar os resultados depois sem rodar tudo de novo, além
+// de retomar de onde parou se o processo for interrompido.
+model BacktestScan {
+  id             String   @id @default(cuid())
+  strategyId     Int
+  strategyName   String
+  pair           String
+  timeframe      String
+  months         Int
+  totalTrades    Int
+  wins           Int
+  losses         Int
+  winRate        Float
+  payoff         Float
+  profitFactor   Float
+  maxDrawdown    Float
+  expectancy     Float
+  runAt          DateTime @default(now())
+
+  @@unique([strategyId, pair, timeframe, months])
+  @@index([profitFactor])
+  @@index([expectancy])
+}
+
+// Resultado do scanner em massa do motor de contexto (regime + gatilho),
+// rodado contra o universo dinâmico de até 100 pares — não a lista curada
+// de sempre. Guarda o resultado "gatilho sozinho" e "gatilho + filtro de
+// regime" lado a lado, pra comparar sem precisar rodar tudo de novo.
+model RadarContextScan {
+  id                String   @id @default(cuid())
+  strategyId        Int
+  strategyName      String
+  pair              String
+  timeframe         String
+  months            Int
+  totalDetected     Int      // quantas vezes o gatilho disparou, sem filtro
+  totalAccepted     Int      // quantas passaram no filtro de regime
+  unfilteredTrades  Int
+  unfilteredWinRate Float
+  unfilteredPF      Float
+  unfilteredExp     Float
+  filteredTrades    Int
+  filteredWinRate   Float
+  filteredPF        Float
+  filteredExp       Float
+  runAt             DateTime @default(now())
+
+  @@unique([strategyId, pair, timeframe, months])
+  @@index([filteredPF])
+  @@index([unfilteredPF])
+}
+
+// Guarda pequenos estados do sistema (ex: quando foi a última checagem
+// diária de divergência, heartbeat do último ciclo do agendador, contador
+// de falhas seguidas), sem precisar de uma tabela dedicada pra cada coisa
+// nova assim.
+model SystemState {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// Trilha de auditoria do piloto automático — cada ação que o sistema toma
+// sozinho (divergência detectada, auto-pause, gap de heartbeat, ciclo com
+// erro) ou que alguém toma manual via dashboard (pausar/reativar) vira uma
+// linha aqui. Existe porque, até 14/08/2026, a única forma de reconstruir
+// "o que aconteceu e quando" era rodar script ad-hoc direto no banco.
+model PilotActionLog {
+  id         String   @id @default(cuid())
+  type       String   // CYCLE_ERROR | CYCLE_RECOVERED | DIVERGENCE_DETECTED | AUTO_PAUSE | MANUAL_PAUSE | MANUAL_RESUME | STABILITY_SCAN | HEARTBEAT_GAP | WEEKLY_DIGEST
+  strategyId Int?
+  pair       String?
+  timeframe  String?
+  message    String   @db.Text
+  createdAt  DateTime @default(now())
+
+  @@index([type])
+  @@index([createdAt])
+}
+
+// Contador de dias CONSECUTIVOS em que uma combinação (estratégia+par+
+// timeframe) apareceu divergente na checagem diária (lib/divergence-check.ts).
+// Ao atingir DIVERGENCE_PAUSE_THRESHOLD, a combinação é pausada
+// automaticamente (para de gerar sinal novo ao vivo) até alguém investigar
+// e resetar manualmente — antes disso, a única resposta a uma divergência
+// persistente era o alerta por e-mail/Telegram, que não impedia o robô de
+// continuar gerando sinal ruim se ninguém estivesse olhando.
+// Histórico do stability-scan (lib/stability-engine.ts) — quebra o backtest
+// de cada combinação ao vivo em pedaços cronológicos e guarda o veredito
+// (ESTAVEL / INSTAVEL / ALTA_VARIANCIA / AMOSTRA_INSUFICIENTE), pra virar
+// consultável ao longo do tempo em vez de só aparecer no terminal de quem
+// rodou manual. Roda automaticamente 1x/semana via scripts/scheduler.ts,
+// além de poder ser rodado sob demanda (npm run stability:scan).
+model StabilityScan {
+  id           String   @id @default(cuid())
+  strategyId   Int
+  strategyName String
+  pair         String
+  timeframe    String
+  months       Int
+  splits       Int
+  totalTrades  Int
+  overallPF    Float
+  bucketPFs    Float[]
+  verdict      String   // INSTAVEL | ALTA_VARIANCIA | ESTAVEL | AMOSTRA_INSUFICIENTE
+  runAt        DateTime @default(now())
+
+  @@unique([strategyId, pair, timeframe, months, splits])
+  @@index([verdict])
+}
+
+model DivergenceStreak {
+  id            String    @id @default(cuid())
+  strategyId    Int
+  pair          String
+  timeframe     String
+  streak        Int       @default(0)
+  paused        Boolean   @default(false)
+  pausedAt      DateTime?
+  lastCheckedAt DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([strategyId, pair, timeframe])
+  @@index([paused])
+}

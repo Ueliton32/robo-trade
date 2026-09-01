@@ -1,0 +1,35 @@
+# ── Dependências ────────────────────────────────────────────────────────
+node_modules/
+
+# ── Next.js ─────────────────────────────────────────────────────────────
+.next/
+out/
+build/
+
+# ── Segredos — NUNCA versionar. Use .env.example como template. ─────────
+.env
+.env.local
+.env*.local
+
+# ── Logs ────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Editor / SO ─────────────────────────────────────────────────────────
+.DS_Store
+*.pem
+.vscode/
+.idea/
+
+# ── TypeScript ──────────────────────────────────────────────────────────
+*.tsbuildinfo
+next-env.d.ts
+
+# ── Config local de ferramentas de desenvolvimento (não é do projeto) ───
+.claude/
+
+# ── Prisma (se algum dia usar SQLite local) ──────────────────────────────
+prisma/*.db
+prisma/*.db-journal

@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: robotrade
+      POSTGRES_PASSWORD: robotrade
+      POSTGRES_DB: robotrade
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U robotrade"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # App web (dashboard). Aplica o schema do banco e roda o seed a cada
+  # start (ambos são seguros/idempotentes) antes de subir o servidor.
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://robotrade:robotrade@postgres:5432/robotrade
+    ports:
+      - "3000:3000"
+    command: sh -c "npx prisma db push && npm run db:seed && npm start"
+
+  # Agendador em background: fecha sinais reais e gera novos sozinho,
+  # de tempos em tempos (ver SCHEDULER_INTERVAL_MINUTES no .env),
+  # mesmo sem ninguém com o dashboard aberto.
+  scheduler:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://robotrade:robotrade@postgres:5432/robotrade
+    command: npm run scheduler
+
+volumes:
+  postgres_data:

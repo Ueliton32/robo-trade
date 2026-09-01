@@ -1,0 +1,40 @@
+name: Robô Trade — stability-scan semanal
+
+# Roda o scripts/stability-scan.ts direto no runner do GitHub — não passa
+# por HTTP nem função serverless, então não tem o limite de ~60s que a
+# rota app/api/cron/run-cycle tem. É por isso que o stability-scan (que
+# pode levar vários minutos) vive num workflow separado do ciclo rápido
+# de 15 em 15 minutos.
+#
+# Requer os secrets abaixo configurados no repositório
+# (Settings → Secrets and variables → Actions) — os mesmos valores que
+# estão no seu .env / nas env vars do deploy:
+#   DATABASE_URL        (obrigatório)
+#   TELEGRAM_BOT_TOKEN   (opcional — só se quiser alerta de instabilidade por Telegram)
+#   SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS, EMAIL_FROM
+#                        (opcionais — só se quiser alerta por e-mail)
+on:
+  schedule:
+    - cron: '0 6 * * 0' # domingo, 06:00 UTC
+  workflow_dispatch: {} # permite rodar manualmente pela aba Actions, pra testar
+
+jobs:
+  stability-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npx tsx scripts/stability-scan.ts --months=3 --splits=2
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_SECURE: ${{ secrets.SMTP_SECURE }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
