@@ -33,3 +33,6 @@ next-env.d.ts
 # ── Prisma (se algum dia usar SQLite local) ──────────────────────────────
 prisma/*.db
 prisma/*.db-journal
+
+.vercel
+.env*
