@@ -121,7 +121,14 @@ export async function runSignalCycle(intervalMinutes: number = 15): Promise<Cycl
   const lines: string[] = [];
   let ok = false;
 
-  await checkHeartbeatGap(intervalMinutes, lines);
+  // Também precisa estar protegido — se o banco estiver inalcançável (ex:
+  // Neon suspenso), essa chamada não pode derrubar a rota inteira com um
+  // 500 sem corpo antes mesmo de chegar no try/catch principal.
+  try {
+    await checkHeartbeatGap(intervalMinutes, lines);
+  } catch (e: any) {
+    lines.push(`Não foi possível checar heartbeat (banco indisponível?): ${e?.message ?? e}`);
+  }
 
   try {
     const pairStrategyPlan = await getGlobalPairStrategyPlan();

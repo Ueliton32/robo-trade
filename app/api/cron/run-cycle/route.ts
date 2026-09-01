@@ -30,7 +30,16 @@ export async function GET(request: Request) {
   }
 
   const intervalMinutes = Math.max(1, parseInt(process.env.SCHEDULER_INTERVAL_MINUTES ?? '15', 10) || 15);
-  const result = await runSignalCycle(intervalMinutes);
 
-  return NextResponse.json(result, { status: result.ok ? 200 : 500 });
+  try {
+    const result = await runSignalCycle(intervalMinutes);
+    return NextResponse.json(result, { status: result.ok ? 200 : 500 });
+  } catch (e: any) {
+    // runSignalCycle já trata os erros esperados (banco fora do ar, etc.)
+    // internamente — isso aqui é só o último cinto de segurança pra nunca
+    // devolver um 500 sem corpo (o que faz o GitHub Actions só mostrar
+    // "falhou", sem dizer por quê).
+    console.error('[cron/run-cycle] Erro inesperado:', e?.message ?? e);
+    return NextResponse.json({ ok: false, lines: [`Erro inesperado: ${e?.message ?? e}`], durationMs: 0 }, { status: 500 });
+  }
 }
