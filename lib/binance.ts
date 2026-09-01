@@ -39,10 +39,22 @@ export interface Ticker24h {
   lowPrice: string;
 }
 
+// Loga status/erro da Binance em vez de engolir em silêncio — até
+// 01/09/2026 essas funções só retornavam vazio/null sem deixar rastro
+// nenhum, então uma falha sistemática (ex: Binance bloqueando a região do
+// servidor) ficava indistinguível de "mercado sem dado" até alguém
+// desconfiar e investigar na mão.
+function logBinanceHttpError(fn: string, status: number, statusText: string) {
+  console.error(`[binance] ${fn} -> HTTP ${status} ${statusText}`);
+}
+function logBinanceFetchError(fn: string, e: any) {
+  console.error(`[binance] ${fn} falhou:`, e?.message ?? e);
+}
+
 export async function getKlines(symbol: string, interval: string, limit = 100): Promise<Kline[]> {
   try {
     const res = await fetch(`${BASE}/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`, { next: { revalidate: 30 } });
-    if (!res.ok) return [];
+    if (!res.ok) { logBinanceHttpError(`getKlines(${symbol})`, res.status, res.statusText); return []; }
     const data = await res.json();
     return (data ?? []).map((k: any) => ({
       openTime: k?.[0] ?? 0,
@@ -53,53 +65,53 @@ export async function getKlines(symbol: string, interval: string, limit = 100): 
       volume: parseFloat(k?.[5] ?? '0'),
       closeTime: k?.[6] ?? 0,
     }));
-  } catch { return []; }
+  } catch (e: any) { logBinanceFetchError(`getKlines(${symbol})`, e); return []; }
 }
 
 export async function getFundingRate(symbol: string): Promise<FundingRate | null> {
   try {
     const res = await fetch(`${BASE}/fapi/v1/fundingRate?symbol=${symbol}&limit=1`, { next: { revalidate: 30 } });
-    if (!res.ok) return null;
+    if (!res.ok) { logBinanceHttpError(`getFundingRate(${symbol})`, res.status, res.statusText); return null; }
     const data = await res.json();
     return data?.[0] ?? null;
-  } catch { return null; }
+  } catch (e: any) { logBinanceFetchError(`getFundingRate(${symbol})`, e); return null; }
 }
 
 export async function getOpenInterest(symbol: string): Promise<OpenInterest | null> {
   try {
     const res = await fetch(`${BASE}/fapi/v1/openInterest?symbol=${symbol}`, { next: { revalidate: 30 } });
-    if (!res.ok) return null;
+    if (!res.ok) { logBinanceHttpError(`getOpenInterest(${symbol})`, res.status, res.statusText); return null; }
     return await res.json();
-  } catch { return null; }
+  } catch (e: any) { logBinanceFetchError(`getOpenInterest(${symbol})`, e); return null; }
 }
 
 export async function getTicker24h(symbol: string): Promise<Ticker24h | null> {
   try {
     const res = await fetch(`${BASE}/fapi/v1/ticker/24hr?symbol=${symbol}`, { next: { revalidate: 15 } });
-    if (!res.ok) return null;
+    if (!res.ok) { logBinanceHttpError(`getTicker24h(${symbol})`, res.status, res.statusText); return null; }
     return await res.json();
-  } catch { return null; }
+  } catch (e: any) { logBinanceFetchError(`getTicker24h(${symbol})`, e); return null; }
 }
 
 export async function getTickerPrice(symbol: string): Promise<TickerPrice | null> {
   try {
     const res = await fetch(`${BASE}/fapi/v1/ticker/price?symbol=${symbol}`, { next: { revalidate: 10 } });
-    if (!res.ok) return null;
+    if (!res.ok) { logBinanceHttpError(`getTickerPrice(${symbol})`, res.status, res.statusText); return null; }
     return await res.json();
-  } catch { return null; }
+  } catch (e: any) { logBinanceFetchError(`getTickerPrice(${symbol})`, e); return null; }
 }
 
 export async function getAllFundingRates(): Promise<FundingRate[]> {
   try {
     const res = await fetch(`${BASE}/fapi/v1/premiumIndex`, { next: { revalidate: 30 } });
-    if (!res.ok) return [];
+    if (!res.ok) { logBinanceHttpError('getAllFundingRates', res.status, res.statusText); return []; }
     const data = await res.json();
     return (data ?? []).map((d: any) => ({
       symbol: d?.symbol ?? '',
       fundingRate: d?.lastFundingRate ?? '0',
       fundingTime: d?.nextFundingTime ?? 0,
     }));
-  } catch { return []; }
+  } catch (e: any) { logBinanceFetchError('getAllFundingRates', e); return []; }
 }
 
 export interface ExchangeSymbolInfo {
