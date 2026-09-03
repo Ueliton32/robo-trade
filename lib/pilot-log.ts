@@ -13,7 +13,8 @@ export type PilotEventType =
   | 'MANUAL_RESUME'
   | 'STABILITY_SCAN'
   | 'HEARTBEAT_GAP'
-  | 'WEEKLY_DIGEST';
+  | 'WEEKLY_DIGEST'
+  | 'CORRELATION_EXPOSURE';
 
 export async function logPilotEvent(
   type: PilotEventType,

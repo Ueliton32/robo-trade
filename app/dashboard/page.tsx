@@ -113,6 +113,7 @@ export default function DashboardPage() {
     MANUAL_PAUSE: 'Pausa manual', MANUAL_RESUME: 'Reativação manual',
     STABILITY_SCAN: 'Scan de estabilidade', HEARTBEAT_GAP: 'Gap de heartbeat',
     WEEKLY_DIGEST: 'Resumo semanal',
+    CORRELATION_EXPOSURE: 'Exposição concentrada',
   };
 
   const activeSignals = (signals ?? []).filter((s: any) => s?.status === 'PENDENTE');

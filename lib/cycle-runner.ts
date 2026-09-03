@@ -22,6 +22,7 @@ import { closeTriggeredSignals, checkTarget2Progress, recalculateStrategyStats }
 import { runDailyDivergenceCheckIfDue } from './divergence-check';
 import { runWeeklyDigestIfDue } from './weekly-digest';
 import { logPilotEvent } from './pilot-log';
+import { checkCorrelationExposure } from './correlation-exposure';
 
 const HEARTBEAT_STATE_KEY = 'last_cycle_heartbeat';
 const CONSECUTIVE_FAILURES_STATE_KEY = 'consecutive_cycle_failures';
@@ -156,6 +157,13 @@ export async function runSignalCycle(intervalMinutes: number = 15): Promise<Cycl
 
     const digestRun = await runWeeklyDigestIfDue();
     if (digestRun.ran) lines.push('Resumo semanal enviado.');
+
+    // Item 5 da rodada de melhoria de 03/09/2026 — só alerta, não bloqueia
+    // geração de sinal (ver lib/correlation-exposure.ts pro racional).
+    const exposure = await checkCorrelationExposure();
+    if (exposure.alertTriggered) {
+      lines.push(`⚠️ Exposição concentrada: ${exposure.maxExposure} pares com sinal na mesma direção pendente ao mesmo tempo.`);
+    }
 
     ok = true;
   } catch (e: any) {

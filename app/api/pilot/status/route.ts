@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { getRecentPilotEvents } from '@/lib/pilot-log';
+import { computeCorrelationExposure } from '@/lib/correlation-exposure';
 
 const HEARTBEAT_STATE_KEY = 'last_cycle_heartbeat';
 const DIVERGENCE_CHECK_STATE_KEY = 'last_divergence_check';
@@ -24,7 +25,7 @@ export async function GET() {
 
     const intervalMinutes = Math.max(1, parseInt(process.env.SCHEDULER_INTERVAL_MINUTES ?? '15', 10) || 15);
 
-    const [heartbeat, lastDivergence, lastStability, lastDigest, failures, pausedCount, recentEvents] = await Promise.all([
+    const [heartbeat, lastDivergence, lastStability, lastDigest, failures, pausedCount, recentEvents, exposure] = await Promise.all([
       prisma.systemState.findUnique({ where: { key: HEARTBEAT_STATE_KEY } }),
       prisma.systemState.findUnique({ where: { key: DIVERGENCE_CHECK_STATE_KEY } }),
       prisma.systemState.findUnique({ where: { key: STABILITY_SCAN_STATE_KEY } }),
@@ -32,6 +33,7 @@ export async function GET() {
       prisma.systemState.findUnique({ where: { key: CONSECUTIVE_FAILURES_STATE_KEY } }),
       prisma.divergenceStreak.count({ where: { paused: true } }),
       getRecentPilotEvents(20),
+      computeCorrelationExposure().catch(() => null),
     ]);
 
     const minutesSinceHeartbeat = heartbeat ? (Date.now() - new Date(heartbeat.value).getTime()) / (1000 * 60) : null;
@@ -48,6 +50,7 @@ export async function GET() {
       lastWeeklyDigestAt: lastDigest?.value ?? null,
       pausedCombos: pausedCount,
       recentEvents,
+      correlationExposure: exposure,
     });
   } catch (error: any) {
     console.error('Pilot status error:', error);
