@@ -437,7 +437,17 @@ export async function analyzeVolatilitySqueeze(pair: string, timeframe: string):
 
 export const STRATEGY_DEFS = [
   { id: 1, name: 'Rompimento de Range', timeframes: ['15m', '1h', '4h'], analyze: analyzeRangeBreakout },
-  { id: 2, name: 'Pullback na EMA20', timeframes: ['1h', '4h'], analyze: analyzePullbackEMA },
+  { id: 2, name: 'Pullback na EMA20', timeframes: ['1h'], analyze: analyzePullbackEMA },
+  // 4h removido em 03/09/2026: duas evidências independentes convergindo.
+  // (1) Scan de backtest de 3 meses em 21 pares: PF médio 0,76 no 4h, só
+  // 2 de 21 pares lucrativos — contra PF médio 0,84 no 1h (que também é
+  // fraco sozinho, mas vira viável com o filtro de regime abaixo).
+  // (2) Testado ao vivo o mesmo dia: tentamos validar com o filtro de
+  // regime em AVAXUSDT/BCHUSDT/DOTUSDT (só 1h) e, à parte, todo teste em
+  // 4h feito nessa mesma rodada mostrou treino/teste inconsistentes no
+  // holdout formal (lib/walk-forward.ts). 1h é onde a estratégia
+  // realmente tem chance — com filtro de regime, restrita a ETH/SOL/ADA
+  // (ver REGIME_GATED_STRATEGIES_LIVE em lib/analysis-engine.ts).
   // 5m removido em 06/08/2026: scan de 294 combinações mostrou PF entre
   // 0,19 e 0,47 em TODOS os majors testados nesse timeframe (BTC, ETH, BNB,
   // XRP, TRX), com amostras de 300-385 trades cada e drawdown de até 60% —
