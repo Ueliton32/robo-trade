@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { MarketCard } from '@/components/dashboard/market-card';
 import { StrategyPanel } from '@/components/dashboard/strategy-panel';
 import { AlertPanel } from '@/components/dashboard/alert-panel';
+import ReliabilityGauge from '@/components/dashboard/reliability-gauge';
 import { toast } from 'sonner';
 
 export default function DashboardPage() {
@@ -210,6 +211,8 @@ export default function DashboardPage() {
           )}
         </div>
       )}
+
+      <ReliabilityGauge />
 
       {/* Market Cards */}
       <div>

@@ -216,7 +216,7 @@ model SystemState {
 // "o que aconteceu e quando" era rodar script ad-hoc direto no banco.
 model PilotActionLog {
   id         String   @id @default(cuid())
-  type       String   // CYCLE_ERROR | CYCLE_RECOVERED | DIVERGENCE_DETECTED | AUTO_PAUSE | MANUAL_PAUSE | MANUAL_RESUME | STABILITY_SCAN | HEARTBEAT_GAP | WEEKLY_DIGEST
+  type       String   // CYCLE_ERROR | CYCLE_RECOVERED | DIVERGENCE_DETECTED | AUTO_PAUSE | MANUAL_PAUSE | MANUAL_RESUME | STABILITY_SCAN | HEARTBEAT_GAP | WEEKLY_DIGEST | CORRELATION_EXPOSURE
   strategyId Int?
   pair       String?
   timeframe  String?
@@ -271,4 +271,22 @@ model DivergenceStreak {
 
   @@unique([strategyId, pair, timeframe])
   @@index([paused])
+}
+
+// Histórico do índice de confiabilidade (lib/reliability-score.ts) — uma
+// foto por dia da pontuação 0-100 e do detalhe por critério, pra virar uma
+// linha do tempo no dashboard ("como isso evoluiu semana a semana"), não
+// só o número de agora. Mede maturidade TÉCNICA/OPERACIONAL — nunca uma
+// recomendação de investimento — e pode cair, não só subir.
+model ReliabilitySnapshot {
+  id                      String   @id @default(cuid())
+  total                   Int
+  uptimeScore             Int
+  sampleScore             Int
+  strategyStabilityScore  Int
+  stabilityScanScore      Int
+  divergenceControlScore  Int
+  createdAt               DateTime @default(now())
+
+  @@index([createdAt])
 }

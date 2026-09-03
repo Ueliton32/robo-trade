@@ -23,6 +23,7 @@ import { runDailyDivergenceCheckIfDue } from './divergence-check';
 import { runWeeklyDigestIfDue } from './weekly-digest';
 import { logPilotEvent } from './pilot-log';
 import { checkCorrelationExposure } from './correlation-exposure';
+import { recordReliabilitySnapshotIfDue } from './reliability-score';
 
 const HEARTBEAT_STATE_KEY = 'last_cycle_heartbeat';
 const CONSECUTIVE_FAILURES_STATE_KEY = 'consecutive_cycle_failures';
@@ -163,6 +164,11 @@ export async function runSignalCycle(intervalMinutes: number = 15): Promise<Cycl
     const exposure = await checkCorrelationExposure();
     if (exposure.alertTriggered) {
       lines.push(`⚠️ Exposição concentrada: ${exposure.maxExposure} pares com sinal na mesma direção pendente ao mesmo tempo.`);
+    }
+
+    const reliabilitySnapshot = await recordReliabilitySnapshotIfDue();
+    if (reliabilitySnapshot.ran && reliabilitySnapshot.result) {
+      lines.push(`Índice de confiabilidade: ${reliabilitySnapshot.result.total}/100.`);
     }
 
     ok = true;
