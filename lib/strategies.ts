@@ -437,6 +437,14 @@ export async function analyzeVolatilitySqueeze(pair: string, timeframe: string):
 
 export const STRATEGY_DEFS = [
   { id: 1, name: 'Rompimento de Range', timeframes: ['15m', '1h', '4h'], analyze: analyzeRangeBreakout },
+  // Pausada manualmente em 05/09/2026 (scripts/pause-pullback-ema20.ts) —
+  // expectância líquida negativa (-0,263%, amostra suficiente) confirmada
+  // por 3 análises independentes (Fase 3, stability-check, peso da Fase 7),
+  // rodando em 12 pares ao vivo (bem além dos 3 originalmente validados).
+  // A pausa é por config (UserSettings.pairStrategies), não por código — a
+  // detecção continua existindo aqui, só não está mais habilitada pra
+  // nenhum par no momento. Reativação é manual, em Configurações →
+  // Estratégia por Moeda, ou editando pairStrategies.
   { id: 2, name: 'Pullback na EMA20', timeframes: ['1h'], analyze: analyzePullbackEMA },
   // 4h removido em 03/09/2026: duas evidências independentes convergindo.
   // (1) Scan de backtest de 3 meses em 21 pares: PF médio 0,76 no 4h, só

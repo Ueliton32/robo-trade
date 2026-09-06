@@ -9,6 +9,7 @@
 import { prisma } from '../lib/prisma';
 import { getGlobalPairStrategyPlan } from '../lib/analysis-engine';
 import { getFundingRate } from '../lib/binance';
+import { getConfiguredExecutionMode } from '../lib/execution-mode';
 
 const STRATEGY_NAMES: Record<number, string> = {
   1: 'Rompimento de Range', 2: 'Pullback na EMA20', 3: 'Trap de Liquidez',
@@ -22,6 +23,7 @@ async function main() {
   const plan = await getGlobalPairStrategyPlan();
   const pairs = Object.keys(plan).sort();
 
+  console.log(`\n=== Modo de execução (Fase 9): ${getConfiguredExecutionMode()} ===`);
   console.log(`\n=== Configuração ao vivo agora (${pairs.length} pares) ===\n`);
   for (const pair of pairs) {
     console.log(pair);

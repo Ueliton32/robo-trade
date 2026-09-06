@@ -6,17 +6,24 @@
 import { prisma } from './prisma';
 import { computeMetrics, TradeLike } from './metrics';
 import { logPilotEvent } from './pilot-log';
+import { buildRobotStatusReport, formatStatusReportDigestLines, formatStatusReportDigestHtml } from './robot-status-report';
 
 const WEEKLY_DIGEST_STATE_KEY = 'last_weekly_digest';
 const MIN_HOURS_BETWEEN_DIGESTS = 24 * 7;
 
-export async function runWeeklyDigestIfDue(): Promise<{ ran: boolean }> {
-  const state = await prisma.systemState.findUnique({ where: { key: WEEKLY_DIGEST_STATE_KEY } });
-  if (state) {
-    const hoursSince = (Date.now() - new Date(state.value).getTime()) / (1000 * 60 * 60);
-    if (hoursSince < MIN_HOURS_BETWEEN_DIGESTS) return { ran: false };
-  }
+export interface WeeklyDigestContent {
+  text: string;
+  emailHtml: string;
+}
 
+/**
+ * Monta o conteúdo do resumo semanal (texto Telegram + HTML e-mail) sem
+ * enviar nada nem tocar no throttle — função pura de leitura+formatação.
+ * Extraída (Fase 11, 05/09/2026) pra poder ser usada tanto pelo caminho
+ * automático (runWeeklyDigestIfDue, abaixo) quanto por um envio manual
+ * de teste (scripts/test-weekly-digest.ts), sem duplicar a montagem.
+ */
+export async function buildWeeklyDigestContent(): Promise<WeeklyDigestContent> {
   const sinceDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
   const newSignals = await prisma.signal.count({ where: { source: 'live', createdAt: { gte: sinceDate } } });
@@ -36,6 +43,14 @@ export async function runWeeklyDigestIfDue(): Promise<{ ran: boolean }> {
     where: { type: 'CYCLE_ERROR', createdAt: { gte: sinceDate } },
   });
 
+  // Fase 11, 05/09/2026 — agregados globais do que as Fases 6-10
+  // adicionaram (modo de execução, circuit breakers, pesos, modelos ML).
+  // Só agregados: a mensagem é a mesma pra todos os inscritos, então
+  // nunca inclui detalhe por usuário aqui (isso fica pro comando CLI
+  // `npm run report:status`, ver scripts/report-status.ts).
+  const statusReport = await buildRobotStatusReport();
+  const statusLines = formatStatusReportDigestLines(statusReport);
+
   const text =
     `📊 <b>Resumo semanal — Robô Trade</b>\n\n` +
     `${newSignals} sinal(is) novo(s) gerado(s)\n` +
@@ -43,7 +58,8 @@ export async function runWeeklyDigestIfDue(): Promise<{ ran: boolean }> {
     `${pausedThisWeek} combinação(ões) pausada(s) essa semana (${pausedNow} pausada(s) no total agora)\n` +
     `${divergenceChecks} dia(s) com divergência detectada\n` +
     (cycleErrors > 0 ? `⚠️ ${cycleErrors} ciclo(s) com erro essa semana\n` : '') +
-    `\nConfira o dashboard pra detalhe por combinação.`;
+    `\n<b>Estado do robô (Fases 6-10):</b>\n${statusLines.join('\n')}\n` +
+    `\nConfira o dashboard pra detalhe por combinação, ou rode "npm run report:status" pra visão completa por usuário.`;
 
   const emailHtml = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0e1a; color: #fff; padding: 24px; border-radius: 12px;">
@@ -55,9 +71,29 @@ export async function runWeeklyDigestIfDue(): Promise<{ ran: boolean }> {
         <li>${divergenceChecks} dia(s) com divergência detectada</li>
         ${cycleErrors > 0 ? `<li style="color:#f87171;">${cycleErrors} ciclo(s) com erro essa semana</li>` : ''}
       </ul>
-      <p>Confira o dashboard pra detalhe por combinação.</p>
+      <h3 style="color: #f0b90b; font-size: 16px;">Estado do robô (Fases 6-10)</h3>
+      <ul>${formatStatusReportDigestHtml(statusReport)}</ul>
+      <p>Confira o dashboard pra detalhe por combinação, ou rode <code>npm run report:status</code> pra visão completa por usuário.</p>
     </div>
   `;
+
+  return { text, emailHtml };
+}
+
+/**
+ * Envia o resumo semanal pros inscritos (Telegram/e-mail) — só de
+ * verdade 1x/semana (MIN_HOURS_BETWEEN_DIGESTS), chamado pelo ciclo do
+ * agendador. Depois de enviar, grava no PilotActionLog e atualiza o
+ * throttle.
+ */
+export async function runWeeklyDigestIfDue(): Promise<{ ran: boolean }> {
+  const state = await prisma.systemState.findUnique({ where: { key: WEEKLY_DIGEST_STATE_KEY } });
+  if (state) {
+    const hoursSince = (Date.now() - new Date(state.value).getTime()) / (1000 * 60 * 60);
+    if (hoursSince < MIN_HOURS_BETWEEN_DIGESTS) return { ran: false };
+  }
+
+  const { text, emailHtml } = await buildWeeklyDigestContent();
 
   const subscribers = await prisma.userSettings.findMany({
     where: {

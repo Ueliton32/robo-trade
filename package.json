@@ -13,7 +13,14 @@
     "backtest:scan": "tsx --require dotenv/config scripts/backtest-scan.ts",
     "radar:scan": "tsx --require dotenv/config scripts/radar-context-scan.ts",
     "stability:check": "tsx --require dotenv/config scripts/stability-check.ts",
-    "stability:scan": "tsx --require dotenv/config scripts/stability-scan.ts"
+    "stability:scan": "tsx --require dotenv/config scripts/stability-scan.ts",
+    "evaluate": "tsx --require dotenv/config scripts/evaluate.ts",
+    "risk:reset": "tsx --require dotenv/config scripts/reset-circuit-breaker.ts",
+    "weights:recompute": "tsx --require dotenv/config scripts/recompute-weights.ts",
+    "ml:model": "tsx --require dotenv/config scripts/ml-model.ts",
+    "config:version": "tsx --require dotenv/config scripts/config-version.ts",
+    "report:status": "tsx --require dotenv/config scripts/report-status.ts",
+    "test:weekly-digest": "tsx --require dotenv/config scripts/test-weekly-digest.ts"
   },
   "prisma": {
     "seed": "tsx --require dotenv/config scripts/safe-seed.ts"

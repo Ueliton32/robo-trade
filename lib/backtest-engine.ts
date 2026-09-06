@@ -10,11 +10,12 @@ import {
   DetectedSignal,
 } from '@/lib/strategies';
 import { computeMetrics, TradeLike, ComputedMetrics } from '@/lib/metrics';
-
-// Custo assumido por operação (taxa de entrada + saída na Binance Futures +
-// uma margem de slippage). Aplicado em TODO trade simulado, ganho ou perda,
-// pra não mostrar um resultado "de laboratório" bom demais pra ser real.
-const ASSUMED_ROUNDTRIP_FEES_PERCENT = 0.1;
+// Mesma constante usada pra descontar custo dos sinais reais fechados
+// (lib/stats-engine.ts), pra manter backtest e resultado ao vivo
+// comparáveis (lib/divergence-check.ts depende disso). Aplicado em TODO
+// trade simulado, ganho ou perda, pra não mostrar um resultado "de
+// laboratório" bom demais pra ser real.
+import { ROUNDTRIP_FEES_PERCENT as ASSUMED_ROUNDTRIP_FEES_PERCENT } from '@/lib/trading-costs';
 
 // Mesmo critério de expiração usado ao vivo (lib/stats-engine.ts): se o
 // preço não bateu em alvo nem stop depois desse tempo, descarta o trade

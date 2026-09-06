@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { ALL_AVAILABLE_PAIRS, STRATEGY_DEFS } from '@/lib/strategies';
+import { recordVersionIfConfigChanged } from '@/lib/config-promotion';
 
 const VALID_STRATEGY_IDS = STRATEGY_DEFS.map((s) => s.id) as [number, ...number[]];
 const strategyId = z.number().int().refine((id) => VALID_STRATEGY_IDS.includes(id), 'ID de estratégia inválido');
@@ -66,6 +67,12 @@ export async function PUT(request: Request) {
     }
     const body = parsed.data;
 
+    // Snapshot de ANTES da mudança (Fase 10) — pra comparar com o
+    // resultado do upsert e só versionar se algum dos 4 campos que
+    // decidem o que o robô gera de fato mudou (preferências como
+    // e-mail/Telegram/capital/risco não entram nessa comparação).
+    const before = await prisma.userSettings.findUnique({ where: { userId } });
+
     const settings = await prisma.userSettings.upsert({
       where: { userId },
       update: {
@@ -87,6 +94,22 @@ export async function PUT(request: Request) {
       },
       create: { userId },
     });
+
+    // Fase 10 — versiona só se pairStrategies/enabledStrategies/
+    // monitoredPairs/pairStrategyTimeframes mudaram de verdade. Nunca
+    // bloqueia o salvamento se isso falhar (é auditoria, não é crítico
+    // pro settings em si).
+    try {
+      await recordVersionIfConfigChanged({
+        userId,
+        before,
+        after: settings,
+        reason: 'Alterado pela tela de Configurações.',
+        changedVia: 'ui',
+      });
+    } catch (e: any) {
+      console.error('[settings] Falha ao versionar mudança de config (Fase 10):', e?.message);
+    }
 
     return NextResponse.json({ settings });
   } catch (error: any) {

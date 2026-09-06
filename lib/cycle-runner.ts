@@ -24,9 +24,9 @@ import { runWeeklyDigestIfDue } from './weekly-digest';
 import { logPilotEvent } from './pilot-log';
 import { checkCorrelationExposure } from './correlation-exposure';
 import { recordReliabilitySnapshotIfDue } from './reliability-score';
+import { notifyOps } from './ops-notify';
+import { HEARTBEAT_STATE_KEY, CONSECUTIVE_FAILURES_STATE_KEY } from './system-state-keys';
 
-const HEARTBEAT_STATE_KEY = 'last_cycle_heartbeat';
-const CONSECUTIVE_FAILURES_STATE_KEY = 'consecutive_cycle_failures';
 const FAILURE_ALERT_THRESHOLD = 3; // avisa a cada 3 falhas seguidas (3, 6, 9...), não a cada uma
 const HEARTBEAT_GAP_MULTIPLIER = 3; // folga de 3x o intervalo antes de soar o alarme de gap
 
@@ -89,26 +89,6 @@ async function handleCycleSuccess(): Promise<void> {
     const message = `Ciclo voltou a rodar normal depois de ${current} falha(s) seguida(s).`;
     await logPilotEvent('CYCLE_RECOVERED', message);
     await notifyOps(`🟢 <b>Robô Trade recuperado</b>\n\n${message}`);
-  }
-}
-
-async function notifyOps(text: string): Promise<void> {
-  try {
-    const { sendTelegramMessage } = await import('./telegram');
-    const { sendEmail } = await import('./mailer');
-    const subscribers = await prisma.userSettings.findMany({
-      where: { OR: [{ emailAlerts: true, alertEmail: { not: null } }, { telegramAlerts: true, telegramChatId: { not: null } }] },
-    });
-    for (const sub of subscribers) {
-      if (sub.telegramAlerts && sub.telegramChatId) {
-        try { await sendTelegramMessage(sub.telegramChatId, text); } catch (e: any) { console.error('Ops Telegram error:', e?.message); }
-      }
-      if (sub.emailAlerts && sub.alertEmail) {
-        try { await sendEmail({ to: sub.alertEmail, subject: 'Robô Trade — status do agendador', html: `<div style="font-family:Arial,sans-serif;">${text.replace(/\n/g, '<br/>')}</div>` }); } catch (e: any) { console.error('Ops email error:', e?.message); }
-      }
-    }
-  } catch (e: any) {
-    console.error('[cycle] Falha ao notificar status operacional:', e?.message);
   }
 }
 

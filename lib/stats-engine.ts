@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { getKlines, Kline } from '@/lib/binance';
 import { STRATEGY_DEFS } from '@/lib/strategies';
 import { computeMetrics, TradeLike } from '@/lib/metrics';
+import { computeNetPnl } from '@/lib/trading-costs';
 
 // Sinais mais antigos que isso sem bater em alvo nem stop são marcados como EXPIRADO
 // e ficam de fora das estatísticas (não contam nem como WIN nem como LOSS).
@@ -49,13 +50,27 @@ export async function closeTriggeredSignals(): Promise<{
       const outcome = evaluateOutcome(signal, klines);
 
       if (outcome) {
+        const costs = computeNetPnl({
+          pnlGrossPercent: outcome.pnlPercent,
+          direction: signal.direction,
+          fundingRateAtSignal: signal.fundingRateAtSignal,
+          entryTime: new Date(signal.createdAt),
+          exitTime: outcome.closedAt,
+        });
         const updated = await prisma.signal.update({
           where: { id: signal.id },
           data: {
             status: outcome.status,
             result: outcome.status,
-            pnlPercent: outcome.pnlPercent,
+            pnlPercent: outcome.pnlPercent, // mantido como PnL bruto — comportamento inalterado
             closedAt: outcome.closedAt,
+            exitPrice: outcome.exitPrice,
+            exitReason: outcome.status === 'WIN' ? 'TARGET1' : 'STOP',
+            maxAdverseExcursionPercent: outcome.maxAdverseExcursionPercent,
+            feesPercent: costs.feesPercent,
+            slippagePercent: costs.slippagePercent,
+            fundingCostPercent: costs.fundingCostPercent,
+            pnlNetPercent: costs.pnlNetPercent,
           },
         });
         closed++;
@@ -66,7 +81,7 @@ export async function closeTriggeredSignals(): Promise<{
       if (ageDays > MAX_SIGNAL_AGE_DAYS) {
         await prisma.signal.update({
           where: { id: signal.id },
-          data: { status: 'EXPIRADO', result: 'EXPIRADO', closedAt: new Date() },
+          data: { status: 'EXPIRADO', result: 'EXPIRADO', closedAt: new Date(), exitReason: 'EXPIRADO' },
         });
         expired++;
       }
@@ -127,13 +142,29 @@ async function getKlinesSince(pair: string, since: Date): Promise<Kline[]> {
   return all.filter((k) => k.closeTime >= sinceTime);
 }
 
+interface OutcomeResult {
+  status: 'WIN' | 'LOSS';
+  pnlPercent: number;
+  closedAt: Date;
+  exitPrice: number;
+  maxAdverseExcursionPercent: number;
+}
+
 function evaluateOutcome(
   signal: { direction: string; entryPrice: number; target1: number; stopLoss: number },
   klines: Kline[]
-): { status: 'WIN' | 'LOSS'; pnlPercent: number; closedAt: Date } | null {
+): OutcomeResult | null {
   const isLong = signal.direction === 'LONG';
+  // Pior variação contra a posição vista até agora, em pontos percentuais
+  // (sempre >= 0) — aproximação por candle de 15m, não tick a tick.
+  let worstAdversePercent = 0;
 
   for (const k of klines) {
+    const adverseNow = isLong
+      ? ((signal.entryPrice - k.low) / signal.entryPrice) * 100
+      : ((k.high - signal.entryPrice) / signal.entryPrice) * 100;
+    if (adverseNow > worstAdversePercent) worstAdversePercent = adverseNow;
+
     const hitStop = isLong ? k.low <= signal.stopLoss : k.high >= signal.stopLoss;
     const hitTarget = isLong ? k.high >= signal.target1 : k.low <= signal.target1;
 
@@ -143,13 +174,13 @@ function evaluateOutcome(
       const pnlPercent = isLong
         ? ((signal.stopLoss - signal.entryPrice) / signal.entryPrice) * 100
         : ((signal.entryPrice - signal.stopLoss) / signal.entryPrice) * 100;
-      return { status: 'LOSS', pnlPercent, closedAt: new Date(k.closeTime) };
+      return { status: 'LOSS', pnlPercent, closedAt: new Date(k.closeTime), exitPrice: signal.stopLoss, maxAdverseExcursionPercent: worstAdversePercent };
     }
     if (hitTarget) {
       const pnlPercent = isLong
         ? ((signal.target1 - signal.entryPrice) / signal.entryPrice) * 100
         : ((signal.entryPrice - signal.target1) / signal.entryPrice) * 100;
-      return { status: 'WIN', pnlPercent, closedAt: new Date(k.closeTime) };
+      return { status: 'WIN', pnlPercent, closedAt: new Date(k.closeTime), exitPrice: signal.target1, maxAdverseExcursionPercent: worstAdversePercent };
     }
   }
   return null;

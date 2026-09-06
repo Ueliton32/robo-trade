@@ -95,6 +95,38 @@ model UserSettings {
   updatedAt           DateTime @updatedAt
 }
 
+// Histórico versionado (append-only) da configuração ao vivo de um usuário
+// — o que realmente decide o que o robô roda (Fase 10, 05/09/2026). Só
+// os 4 campos que afetam GERAÇÃO DE SINAL entram aqui (monitoredPairs,
+// enabledStrategies, pairStrategies, pairStrategyTimeframes) — preferências
+// como alerta de e-mail/Telegram, capital e risco por trade não são
+// "promoção" de comportamento de trading, então não geram versão.
+//
+// Nunca é editado nem apagado: toda mudança (pela tela de Configurações
+// ou por um script) grava uma linha NOVA com o estado resultante. Um
+// rollback também é só mais uma linha nova (com rolledBackFrom apontando
+// pra versão restaurada) — o histórico completo, inclusive o que motivou
+// o rollback, continua visível pra sempre. Ver lib/config-promotion.ts.
+model ConfigVersion {
+  id                      String   @id @default(cuid())
+  userId                  String
+  version                 Int // sequencial por usuário: 1, 2, 3...
+
+  monitoredPairs          Json // string[]
+  enabledStrategies       Json // number[]
+  pairStrategies          Json?
+  pairStrategyTimeframes  Json?
+
+  reason                  String   @db.Text // motivo da mudança — sempre obrigatório, nunca vazio
+  changedVia              String   // 'baseline' | 'ui' | 'rollback' | nome do script que promoveu
+  rolledBackFrom          Int?     // se esta linha é resultado de rollback, qual versão foi restaurada
+
+  createdAt               DateTime @default(now())
+
+  @@unique([userId, version])
+  @@index([userId, createdAt])
+}
+
 model Signal {
   id              String   @id @default(cuid())
   strategyId      Int
@@ -115,6 +147,63 @@ model Signal {
   pnlPercent      Float?   
   source          String   @default("live") // "live" = gerado pelo robô | "seed"/"demo" = exemplo ilustrativo, nunca entra nas estatísticas
   target2Reached  Boolean  @default(false)  // alvo 2 é informativo — não muda WIN/LOSS, só dispara uma notificação extra
+
+  // ── Contexto no momento do sinal (Fase 2 — registro completo, 04/09/2026) ──
+  // Tudo abaixo é opcional/best-effort: se uma chamada externa (Binance,
+  // classificação de regime) falhar na hora de gerar o sinal, o sinal ainda
+  // é salvo normalmente, só sem esse dado extra — nunca bloqueia a geração.
+  riskRewardRatio     Float?   // (alvo1-entrada)/(entrada-stop), sempre positivo
+  marketRegime        String?  // classificação de lib/regime.ts no momento do sinal
+  regimeForce         Float?   // 0-1, força/alinhamento do regime (ver lib/regime.ts)
+  atrRatio            Float?   // ATR recente / ATR normal, no momento do sinal
+  volumeRatio         Float?   // volume recente / volume normal, no momento do sinal
+  fundingRateAtSignal Float?   // taxa de funding do par no momento do sinal (fração, ex: 0.0001) — não é o custo pago, isso é estimado no fechamento
+  spreadAtSignal      Float?   // (ask-bid)/bid em %, best-effort via book ticker
+  indicators          Json?    // snapshot dos indicadores/detalhes de regime usados, quando disponível
+  robotVersion        String?  // versão do robô que gerou o sinal (lib/version.ts) — nunca reescrito depois
+
+  // ── Resultado da operação (preenchido só quando o sinal fecha) ─────────
+  // "Operação" aqui = o próprio sinal tratado como operação simulada/paper —
+  // o robô nunca envia ordem real (ver README).
+  exitPrice                  Float?   // preço em que WIN/LOSS foi decidido (alvo1 ou stop)
+  exitReason                 String?  // "TARGET1" | "STOP" | "EXPIRADO"
+  feesPercent                Float?   // custo de taxa assumido, em % — lib/trading-costs.ts
+  slippagePercent            Float?   // slippage assumido, em % — lib/trading-costs.ts
+  fundingCostPercent         Float?   // estimativa de funding pago/recebido durante a operação, em % (positivo = custo)
+  pnlNetPercent               Float?  // pnlPercent (bruto) menos taxa+slippage+funding estimados
+  maxAdverseExcursionPercent  Float?  // pior variação contra a posição, em %, entre entrada e fechamento (aproximação por candle de 15m)
+  executionError               String? // reservado para quando houver execução real (Fase 9) — sempre nulo hoje
+
+  // ── Peso dinâmico entre estratégias (Fase 7, 05/09/2026) ────────────────
+  // Peso da estratégia (ver lib/strategy-weights.ts) no momento em que ESTE
+  // sinal foi gerado — puramente informativo/auditável, nunca reescrito
+  // depois. Não influencia stop/alvo/leverage deste sinal; o único efeito
+  // prático do peso é a ordem de prioridade quando o limite de exposição
+  // (Fase 8) é atingido no mesmo ciclo. Null = sinal gerado antes da Fase 7
+  // ou antes de qualquer StrategyWeight ter sido calculado (equivale a
+  // peso neutro 1.0).
+  weightAtSignal  Float?
+
+  // ── Modo de execução (Fase 9, 05/09/2026) ───────────────────────────────
+  // BACKTEST/REPLAY/SHADOW/PAPER_TRADING/LIVE — ver lib/execution-mode.ts
+  // pro que cada um significa de verdade neste projeto. Sinal ao vivo
+  // normal = "PAPER_TRADING" (é o que sempre foi, só agora com nome
+  // explícito). "LIVE" nunca aparece aqui de verdade — a geração é
+  // bloqueada antes de chegar a criar o sinal (ver assertLiveExecutionNotAttempted).
+  // "SHADOW" também nunca aparece aqui — sinal em modo shadow é
+  // deliberadamente NUNCA salvo (ver saveNewSignals em lib/analysis-engine.ts).
+  executionMode   String   @default("PAPER_TRADING")
+
+  // ── Modelo ML explicável (Fase 6, 05/09/2026) ───────────────────────────
+  // Probabilidade estimada de bater o alvo 1 antes do stop, calculada pelo
+  // modelo ATIVO (MLModel.active=true) da estratégia no momento do sinal —
+  // puramente informativo, igual ao peso da Fase 7. NUNCA usado pra decidir
+  // stop/alvo/leverage/entrada nem qualquer limite de risco. Null quando
+  // não havia modelo ativo pra essa estratégia (comportamento padrão até
+  // o usuário treinar E ativar um modelo via scripts/ml-model.ts).
+  mlProbability   Float?
+  mlModelVersion  Int?
+
   createdAt       DateTime @default(now())
   closedAt        DateTime?
 
@@ -123,6 +212,73 @@ model Signal {
   @@index([createdAt])
   @@index([status])
   @@index([source])
+}
+
+// Registro versionado (append-only) de modelos de ML treinados — Fase 6,
+// 05/09/2026. Cada `npm run ml:model -- --train` grava uma linha NOVA,
+// nunca sobrescreve uma existente, pra manter auditável como o modelo
+// mudou ao longo do tempo (inclusive versões descartadas por desempenho
+// fraco). Só a linha com active=true (no máximo uma por strategyId) é
+// usada pra pontuar sinais ao vivo — ativar é sempre um passo manual
+// separado do treino (scripts/ml-model.ts --activate), nunca automático.
+model MLModel {
+  id                  String   @id @default(cuid())
+  strategyId          Int
+  strategyName        String
+  version             Int      // sequencial por estratégia: 1, 2, 3...
+
+  // Regressão logística simples — pesos na MESMA ordem de featureNames.
+  // Padronização (z-score) embutida: featureMeans/featureStds são
+  // aplicados antes de multiplicar pelos pesos, tanto no treino quanto na
+  // pontuação ao vivo (lib/ml-model.ts), pra garantir consistência.
+  featureNames        Json     // string[]
+  weights             Json     // number[], mesma ordem de featureNames
+  bias                Float
+  featureMeans        Json     // number[]
+  featureStds         Json     // number[]
+
+  // Dados e avaliação do treino — sempre com holdout cronológico (treino
+  // na parte mais antiga, teste na mais recente, nunca embaralhado) pra
+  // não usar dado "do futuro" pra validar o próprio modelo.
+  trainedFromMonths   Int
+  pairsUsed           Json     // string[] dos pares usados no treino
+  trainSampleSize     Int
+  testSampleSize      Int
+  trainAccuracy       Float?
+  testAccuracy        Float?
+  testAUC             Float?   // 0.5 = não melhor que chute aleatório
+  testBrierScore      Float?   // menor é melhor (0 = perfeito, 0.25 = chute constante 50%)
+  baselineWinRate     Float?   // taxa de acerto real da estratégia no período — referência de comparação
+
+  active              Boolean  @default(false)
+  notes               String?  @db.Text
+  trainedAt           DateTime @default(now())
+  robotVersion        String?
+
+  @@index([strategyId, active])
+  @@index([strategyId, version])
+}
+
+// Histórico versionado (append-only, nunca sobrescrito) do peso calculado
+// por estratégia — Fase 7, 05/09/2026. Cada linha é um "cálculo" completo:
+// uma rodada de scripts/recompute-weights.ts grava até 6 linhas (uma por
+// estratégia). O peso "atual" de uma estratégia é sempre a linha mais
+// recente (maior computedAt) — nunca é feito update in-place, pra manter
+// o histórico auditável de como o peso mudou ao longo do tempo.
+model StrategyWeight {
+  id               String   @id @default(cuid())
+  strategyId       Int
+  strategyName     String
+  weight           Float    // 0.3–1.0 — ver lib/strategy-weights.ts (WEIGHT_FLOOR/WEIGHT_CEILING)
+  rawExpectancyNet Float?   // expectância líquida (%/trade) usada como base do score; null se amostra insuficiente
+  sampleSize       Int
+  sufficientSample Boolean
+  lookbackDays     Int
+  neutral          Boolean  @default(false) // true = amostra insuficiente ou sem base comparativa; peso = 1.0 por padrão, não penalizado
+  computedAt       DateTime @default(now())
+  robotVersion     String?
+
+  @@index([strategyId, computedAt])
 }
 
 model StrategyStats {
@@ -278,6 +434,28 @@ model DivergenceStreak {
 // linha do tempo no dashboard ("como isso evoluiu semana a semana"), não
 // só o número de agora. Mede maturidade TÉCNICA/OPERACIONAL — nunca uma
 // recomendação de investimento — e pode cair, não só subir.
+// Circuit breakers de risco GLOBAIS (Fase 8, 04/09/2026) — uma linha por
+// tipo de proteção (daily_loss, weekly_loss, max_drawdown, loss_streak,
+// api_failures — ver lib/circuit-breakers.ts pros valores exatos). Ao
+// disparar (`tripped: true`), a geração de sinal novo fica bloqueada em
+// TODO o sistema até reset manual explícito — nunca se destrava sozinho,
+// mesmo que a métrica volte a ficar OK no próximo ciclo. Sinais já
+// pendentes continuam sendo monitorados/fechados normalmente; só sinal
+// NOVO é bloqueado.
+model RiskCircuitBreaker {
+  key         String    @id
+  tripped     Boolean   @default(false)
+  reason      String?   @db.Text
+  metricValue Float?
+  threshold   Float?
+  trippedAt   DateTime?
+  resetAt     DateTime?
+  resetNote   String?   @db.Text
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tripped])
+}
+
 model ReliabilitySnapshot {
   id                      String   @id @default(cuid())
   total                   Int

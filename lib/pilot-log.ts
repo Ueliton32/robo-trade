@@ -14,7 +14,9 @@ export type PilotEventType =
   | 'STABILITY_SCAN'
   | 'HEARTBEAT_GAP'
   | 'WEEKLY_DIGEST'
-  | 'CORRELATION_EXPOSURE';
+  | 'CORRELATION_EXPOSURE'
+  | 'CIRCUIT_BREAKER_TRIPPED'
+  | 'CIRCUIT_BREAKER_RESET';
 
 export async function logPilotEvent(
   type: PilotEventType,

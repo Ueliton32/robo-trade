@@ -101,6 +101,29 @@ export async function getTickerPrice(symbol: string): Promise<TickerPrice | null
   } catch (e: any) { logBinanceFetchError(`getTickerPrice(${symbol})`, e); return null; }
 }
 
+export interface BookTicker {
+  symbol: string;
+  bidPrice: number;
+  askPrice: number;
+}
+
+// Melhor bid/ask no momento — usado só para estimar o spread no instante de
+// um sinal (registro/auditoria), não para decidir entrada. Best-effort: se
+// falhar, quem chamou trata como spread desconhecido (null), sem bloquear
+// nada.
+export async function getBookTicker(symbol: string): Promise<BookTicker | null> {
+  try {
+    const res = await fetch(`${BASE}/fapi/v1/ticker/bookTicker?symbol=${symbol}`, { next: { revalidate: 10 } });
+    if (!res.ok) { logBinanceHttpError(`getBookTicker(${symbol})`, res.status, res.statusText); return null; }
+    const data = await res.json();
+    return {
+      symbol: data?.symbol ?? symbol,
+      bidPrice: parseFloat(data?.bidPrice ?? '0'),
+      askPrice: parseFloat(data?.askPrice ?? '0'),
+    };
+  } catch (e: any) { logBinanceFetchError(`getBookTicker(${symbol})`, e); return null; }
+}
+
 export async function getAllFundingRates(): Promise<FundingRate[]> {
   try {
     const res = await fetch(`${BASE}/fapi/v1/premiumIndex`, { next: { revalidate: 30 } });
