@@ -33,6 +33,7 @@ import { notifyOps } from './ops-notify';
 import { computeExtendedMetrics, signalRowToEvaluationTrade, EvaluationTrade } from './metrics-extended';
 import { ROUNDTRIP_FEES_PERCENT, ASSUMED_SLIPPAGE_PERCENT } from './trading-costs';
 import { CONSECUTIVE_FAILURES_STATE_KEY } from './system-state-keys';
+import { getGlobalPairStrategyPlan, isComboActive } from './pair-strategy-plan';
 import {
   RISK_MAX_DAILY_LOSS_PERCENT,
   RISK_MAX_WEEKLY_LOSS_PERCENT,
@@ -103,15 +104,48 @@ async function checkWeeklyLoss(): Promise<BreakerCheck> {
   };
 }
 
+/**
+ * Achado em produção (07/09/2026): um reset manual deste breaker some no
+ * ciclo seguinte, sozinho, se a condição bruta continuar batendo — porque
+ * checkMaxDrawdown recalcula do zero a cada chamada, sem saber que já foi
+ * resetado (ver evaluateCircuitBreakers). Isso virou um problema real: a
+ * estratégia Pullback na EMA20 foi removida de todos os pares (04-06/09),
+ * mas os 78 sinais perdedores dela continuavam dentro da janela de 90 dias
+ * e mantinham o drawdown acima do limite indefinidamente — resetar não
+ * ajudava, e esperar a janela de 90 dias "esquecer" sozinha significava
+ * ~3 meses de robô pausado por uma causa já corrigida.
+ *
+ * Correção: o cálculo de drawdown agora só considera sinais de combinações
+ * (par + estratégia) que ainda estão ATIVAS na configuração de hoje (união
+ * de todos os usuários, igual ao que generateSignals() realmente roda —
+ * ver lib/pair-strategy-plan.ts). Histórico de uma combinação desativada
+ * não desaparece do banco nem das quebras de scripts/evaluate.ts, só para
+ * de contar pra esta proteção especificamente — o raciocínio é que uma
+ * causa já removida da configuração ao vivo não deveria continuar
+ * bloqueando geração de sinal por meses.
+ *
+ * Os outros breakers (daily_loss, weekly_loss, loss_streak) NÃO foram
+ * mexidos: suas janelas são curtas (1 dia, 7 dias, N perdas seguidas) ou
+ * se autocorrigem com um WIN novo, então o mesmo problema não se sustenta
+ * ali do mesmo jeito — mudar todos de uma vez sem necessidade concreta
+ * seria risco extra sem benefício claro.
+ */
+async function filterTradesToActiveCombos(trades: EvaluationTrade[]): Promise<EvaluationTrade[]> {
+  const plan = await getGlobalPairStrategyPlan();
+  return trades.filter((t) => isComboActive(plan, t.pair, t.strategyId));
+}
+
 async function checkMaxDrawdown(): Promise<BreakerCheck> {
   const since = new Date(Date.now() - RISK_MAX_DRAWDOWN_LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
-  const trades = await loadLiveClosedSince(since);
+  const allTrades = await loadLiveClosedSince(since);
+  const trades = await filterTradesToActiveCombos(allTrades);
+  const excludedCount = allTrades.length - trades.length;
   const metrics = computeExtendedMetrics(trades);
   const threshold = RISK_MAX_DRAWDOWN_PERCENT;
   return {
     key: 'max_drawdown',
     breached: trades.length > 0 && metrics.maxDrawdownNet >= threshold,
-    reason: `Drawdown líquido máximo nos últimos ${RISK_MAX_DRAWDOWN_LOOKBACK_DAYS} dias: ${metrics.maxDrawdownNet.toFixed(2)}% >= limite de ${threshold.toFixed(2)}% (${trades.length} sinal(is))`,
+    reason: `Drawdown líquido máximo nos últimos ${RISK_MAX_DRAWDOWN_LOOKBACK_DAYS} dias, só combinações par/estratégia ainda ativas: ${metrics.maxDrawdownNet.toFixed(2)}% >= limite de ${threshold.toFixed(2)}% (${trades.length} sinal(is)${excludedCount > 0 ? `, ${excludedCount} excluído(s) por serem de combinação já desativada` : ''})`,
     metricValue: metrics.maxDrawdownNet,
     threshold,
   };
