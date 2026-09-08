@@ -116,10 +116,13 @@ function sumNetPnl(trades: EvaluationTrade[]): number {
  * ruim no geral". Decisão consciente do usuário (08/09/2026) — cada caso
  * de reset continua exigindo uma nota manual explicando o motivo.
  *
- * loss_streak e api_failures NÃO foram mexidos: loss_streak conta as N
- * últimas perdas de QUALQUER combinação (não uma janela de tempo), então
- * filtrar por combinação ativa mudaria o significado da métrica em vez de
- * só remover ruído; api_failures não depende de par/estratégia nenhum.
+ * loss_streak também passou a usar o mesmo filtro (08/09/2026, ver
+ * checkLossStreak) depois de acontecer na prática: 3 das 8 perdas
+ * "seguidas" que dispararam eram do HYPEUSDT, já removido. A suposição
+ * original aqui ("se autocorrige com um WIN novo") era verdade em teoria,
+ * mas não impede histórico de combinação desativada de ocupar vagas na
+ * contagem por dias, até um WIN de verdade empurrar ela pra fora da
+ * janela. api_failures não foi mexido — não depende de par/estratégia.
  */
 async function filterTradesToActiveCombos(trades: EvaluationTrade[]): Promise<EvaluationTrade[]> {
   const plan = await getGlobalPairStrategyPlan();
@@ -173,15 +176,28 @@ async function checkMaxDrawdown(): Promise<BreakerCheck> {
   };
 }
 
+/**
+ * Achado em produção (08/09/2026): mesma contaminação dos outros breakers
+ * — 3 das 8 perdas "seguidas" que dispararam este eram do HYPEUSDT, já
+ * removido de monitoredPairs. Decisão original deste arquivo (falava que
+ * loss_streak "se autocorrige com um WIN novo") era verdade em teoria, mas
+ * não evita que histórico de um par/estratégia já desativado ocupe vagas
+ * na contagem das N últimas perdas até um WIN de verdade "empurrar" ele
+ * pra fora da janela — o que pode levar dias. Corrigido com o mesmo
+ * filtro dos outros três breakers. Busca um lote maior que o limite (3x)
+ * pra sobrar sinal suficiente depois de excluir combinação desativada.
+ */
 async function checkLossStreak(): Promise<BreakerCheck> {
   const recent = await prisma.signal.findMany({
     where: { source: 'live', status: { in: ['WIN', 'LOSS'] } },
     orderBy: { closedAt: 'desc' },
-    take: RISK_MAX_CONSECUTIVE_LOSSES + 5,
-    select: { status: true },
+    take: (RISK_MAX_CONSECUTIVE_LOSSES + 5) * 3,
+    select: { status: true, pair: true, strategyId: true },
   });
+  const plan = await getGlobalPairStrategyPlan();
+  const active = recent.filter((s) => isComboActive(plan, s.pair, s.strategyId));
   let streak = 0;
-  for (const s of recent) {
+  for (const s of active) {
     if (s.status === 'LOSS') streak++;
     else break;
   }
@@ -189,7 +205,7 @@ async function checkLossStreak(): Promise<BreakerCheck> {
   return {
     key: 'loss_streak',
     breached: streak >= threshold,
-    reason: `${streak} perda(s) seguida(s) (entre todas as estratégias/pares) >= limite de ${threshold}`,
+    reason: `${streak} perda(s) seguida(s) (entre todas as estratégias/pares ainda ativas) >= limite de ${threshold}`,
     metricValue: streak,
     threshold,
   };
