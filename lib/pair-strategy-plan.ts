@@ -35,13 +35,30 @@ export function buildPairStrategyPlan(settings: {
 
   const plan: PairStrategyPlan = {};
   for (const pair of pairs) {
-    const enabledIds = strategyOverrides?.[pair]?.length ? strategyOverrides[pair] : defaultStrats;
+    // Achado em produção (08/09/2026): `strategyOverrides?.[pair]?.length`
+    // não distinguia "par sem override nenhum" de "override explícito pra
+    // ZERO estratégias" — os dois casos caíam no mesmo `: defaultStrats`,
+    // já que `[].length` também é falsy. Na prática: desmarcar a última
+    // estratégia de um par na tela de Configurações (togglePairStrategy
+    // grava `[]`) fazia o par voltar sozinho pra TODAS as estratégias
+    // padrão no próximo carregamento/ciclo — o oposto do que a pessoa
+    // acabou de fazer. Foi assim que BCHUSDT ficou com Pullback na EMA20
+    // ativo de novo mesmo depois de removida via scripts/pause-pullback-
+    // ema20.ts. Corrigido distinguindo "chave existe" (mesmo que `[]`) de
+    // "chave ausente" — mesmo ajuste replicado em
+    // app/dashboard/configuracoes/page.tsx (pairStrategiesFor/hasOverride),
+    // que tinha exatamente o mesmo bug do lado da tela.
+    const hasOverride = Object.prototype.hasOwnProperty.call(strategyOverrides, pair);
+    const enabledIds = hasOverride ? strategyOverrides[pair] : defaultStrats;
     plan[pair] = {};
     for (const id of enabledIds) {
       const strat = STRATEGY_DEFS.find((s) => s.id === id);
       if (!strat) continue;
-      const tfOverride = timeframeOverrides?.[pair]?.[String(id)];
-      const timeframes = tfOverride?.length ? tfOverride.filter((tf) => strat.timeframes.includes(tf)) : strat.timeframes;
+      const pairTfOverrides = timeframeOverrides?.[pair];
+      const hasTfOverride = !!pairTfOverrides && Object.prototype.hasOwnProperty.call(pairTfOverrides, String(id));
+      const timeframes = hasTfOverride
+        ? pairTfOverrides[String(id)].filter((tf) => strat.timeframes.includes(tf))
+        : strat.timeframes;
       if (timeframes.length) plan[pair][id] = timeframes;
     }
   }

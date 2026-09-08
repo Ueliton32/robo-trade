@@ -155,7 +155,13 @@ export default function ConfiguracoesPage() {
 
   const pairStrategiesFor = (pair: string): number[] => {
     const overrides = settings?.pairStrategies ?? {};
-    return overrides?.[pair]?.length ? overrides[pair] : (settings?.enabledStrategies ?? [1, 2, 3, 4, 5, 6]);
+    // Mesmo bug corrigido em lib/pair-strategy-plan.ts (08/09/2026): usar
+    // `?.length` aqui tratava "override explícito de zero estratégias"
+    // igual a "sem override nenhum" — desmarcar a última estratégia de um
+    // par (togglePairStrategy grava `[]`) fazia a tela mostrar tudo
+    // marcado de novo, escondendo que o usuário tinha acabado de zerar o
+    // par. Agora distingue pela chave existir, não pelo array ter itens.
+    return Object.prototype.hasOwnProperty.call(overrides, pair) ? overrides[pair] : (settings?.enabledStrategies ?? [1, 2, 3, 4, 5, 6]);
   };
 
   const togglePairStrategy = (pair: string, strategyId: number) => {
@@ -405,7 +411,7 @@ export default function ConfiguracoesPage() {
                 </TableHeader>
                 <TableBody>
                   {(settings?.monitoredPairs ?? []).map((pair: string) => {
-                    const hasOverride = !!(settings?.pairStrategies ?? {})[pair]?.length;
+                    const hasOverride = Object.prototype.hasOwnProperty.call(settings?.pairStrategies ?? {}, pair);
                     const active = pairStrategiesFor(pair);
                     return (
                       <TableRow key={pair}>
