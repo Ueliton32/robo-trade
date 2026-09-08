@@ -77,14 +77,65 @@ function sumNetPnl(trades: EvaluationTrade[]): number {
   }, 0);
 }
 
+/**
+ * Achado em produção (07-08/09/2026): um reset manual de um breaker
+ * "esquece" sozinho no ciclo seguinte se a condição bruta continuar
+ * batendo — porque cada check recalcula do zero a cada chamada, sem saber
+ * que já foi resetado (ver evaluateCircuitBreakers). Aconteceu duas vezes:
+ *
+ * 1) max_drawdown (07/09): a estratégia Pullback na EMA20 foi removida de
+ *    quase todos os pares, mas os sinais perdedores dela continuavam
+ *    dentro da janela de 90 dias e mantinham o drawdown acima do limite
+ *    indefinidamente — resetar não ajudava, e esperar a janela de 90 dias
+ *    "esquecer" sozinha significava ~3 meses de robô pausado por uma
+ *    causa já corrigida.
+ * 2) daily_loss (08/09): HYPEUSDT foi removido de monitoredPairs por
+ *    performance ruim, mas as perdas dele já fechadas HOJE continuavam
+ *    contando pro total do dia — resetar re-disparava na hora. Aqui a
+ *    decisão original deste arquivo (comentário abaixo, agora corrigido)
+ *    tinha sido NÃO aplicar o mesmo filtro, com a suposição de que uma
+ *    janela curta "se autocorrige sozinha" — o que é verdade pro dia
+ *    SEGUINTE (a janela rola pra frente à meia-noite UTC), mas não ajuda
+ *    quem quer destravar HOJE, no mesmo dia da perda. Suposição errada na
+ *    prática, corrigida depois de acontecer de verdade em produção.
+ *
+ * Correção (aplicada a max_drawdown, daily_loss e weekly_loss): o cálculo
+ * só considera sinais de combinações (par + estratégia) que ainda estão
+ * ATIVAS na configuração de hoje (união de todos os usuários, igual ao que
+ * generateSignals() realmente roda — ver lib/pair-strategy-plan.ts).
+ * Histórico de uma combinação desativada não desaparece do banco nem das
+ * quebras de scripts/evaluate.ts, só para de contar pra estas proteções
+ * especificamente — o raciocínio é que uma causa já removida da
+ * configuração ao vivo não deveria continuar bloqueando geração de sinal
+ * novo (nem por meses, nem pelo resto do dia).
+ *
+ * Trade-off consciente, não só técnico: isso enfraquece um pouco o
+ * propósito de daily_loss/weekly_loss — se par ou estratégia perdedora
+ * for removido toda vez que perde, na prática esses dois breakers só
+ * travam por perda de algo que CONTINUA ativo, nunca mais por "o dia foi
+ * ruim no geral". Decisão consciente do usuário (08/09/2026) — cada caso
+ * de reset continua exigindo uma nota manual explicando o motivo.
+ *
+ * loss_streak e api_failures NÃO foram mexidos: loss_streak conta as N
+ * últimas perdas de QUALQUER combinação (não uma janela de tempo), então
+ * filtrar por combinação ativa mudaria o significado da métrica em vez de
+ * só remover ruído; api_failures não depende de par/estratégia nenhum.
+ */
+async function filterTradesToActiveCombos(trades: EvaluationTrade[]): Promise<EvaluationTrade[]> {
+  const plan = await getGlobalPairStrategyPlan();
+  return trades.filter((t) => isComboActive(plan, t.pair, t.strategyId));
+}
+
 async function checkDailyLoss(): Promise<BreakerCheck> {
-  const trades = await loadLiveClosedSince(startOfTodayUTC());
+  const allTrades = await loadLiveClosedSince(startOfTodayUTC());
+  const trades = await filterTradesToActiveCombos(allTrades);
+  const excludedCount = allTrades.length - trades.length;
   const net = sumNetPnl(trades);
   const threshold = -RISK_MAX_DAILY_LOSS_PERCENT;
   return {
     key: 'daily_loss',
     breached: trades.length > 0 && net <= threshold,
-    reason: `PnL líquido de hoje (desde 00:00 UTC): ${net.toFixed(2)}% <= limite de ${threshold.toFixed(2)}% (${trades.length} sinal(is) fechado(s) hoje)`,
+    reason: `PnL líquido de hoje (desde 00:00 UTC), só combinações par/estratégia ainda ativas: ${net.toFixed(2)}% <= limite de ${threshold.toFixed(2)}% (${trades.length} sinal(is) fechado(s) hoje${excludedCount > 0 ? `, ${excludedCount} excluído(s) por serem de combinação já desativada` : ''})`,
     metricValue: net,
     threshold,
   };
@@ -92,47 +143,18 @@ async function checkDailyLoss(): Promise<BreakerCheck> {
 
 async function checkWeeklyLoss(): Promise<BreakerCheck> {
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const trades = await loadLiveClosedSince(since);
+  const allTrades = await loadLiveClosedSince(since);
+  const trades = await filterTradesToActiveCombos(allTrades);
+  const excludedCount = allTrades.length - trades.length;
   const net = sumNetPnl(trades);
   const threshold = -RISK_MAX_WEEKLY_LOSS_PERCENT;
   return {
     key: 'weekly_loss',
     breached: trades.length > 0 && net <= threshold,
-    reason: `PnL líquido dos últimos 7 dias: ${net.toFixed(2)}% <= limite de ${threshold.toFixed(2)}% (${trades.length} sinal(is))`,
+    reason: `PnL líquido dos últimos 7 dias, só combinações par/estratégia ainda ativas: ${net.toFixed(2)}% <= limite de ${threshold.toFixed(2)}% (${trades.length} sinal(is)${excludedCount > 0 ? `, ${excludedCount} excluído(s) por serem de combinação já desativada` : ''})`,
     metricValue: net,
     threshold,
   };
-}
-
-/**
- * Achado em produção (07/09/2026): um reset manual deste breaker some no
- * ciclo seguinte, sozinho, se a condição bruta continuar batendo — porque
- * checkMaxDrawdown recalcula do zero a cada chamada, sem saber que já foi
- * resetado (ver evaluateCircuitBreakers). Isso virou um problema real: a
- * estratégia Pullback na EMA20 foi removida de todos os pares (04-06/09),
- * mas os 78 sinais perdedores dela continuavam dentro da janela de 90 dias
- * e mantinham o drawdown acima do limite indefinidamente — resetar não
- * ajudava, e esperar a janela de 90 dias "esquecer" sozinha significava
- * ~3 meses de robô pausado por uma causa já corrigida.
- *
- * Correção: o cálculo de drawdown agora só considera sinais de combinações
- * (par + estratégia) que ainda estão ATIVAS na configuração de hoje (união
- * de todos os usuários, igual ao que generateSignals() realmente roda —
- * ver lib/pair-strategy-plan.ts). Histórico de uma combinação desativada
- * não desaparece do banco nem das quebras de scripts/evaluate.ts, só para
- * de contar pra esta proteção especificamente — o raciocínio é que uma
- * causa já removida da configuração ao vivo não deveria continuar
- * bloqueando geração de sinal por meses.
- *
- * Os outros breakers (daily_loss, weekly_loss, loss_streak) NÃO foram
- * mexidos: suas janelas são curtas (1 dia, 7 dias, N perdas seguidas) ou
- * se autocorrigem com um WIN novo, então o mesmo problema não se sustenta
- * ali do mesmo jeito — mudar todos de uma vez sem necessidade concreta
- * seria risco extra sem benefício claro.
- */
-async function filterTradesToActiveCombos(trades: EvaluationTrade[]): Promise<EvaluationTrade[]> {
-  const plan = await getGlobalPairStrategyPlan();
-  return trades.filter((t) => isComboActive(plan, t.pair, t.strategyId));
 }
 
 async function checkMaxDrawdown(): Promise<BreakerCheck> {
