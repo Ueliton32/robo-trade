@@ -1,0 +1,83 @@
+{
+  "counts": {
+    "total": 199,
+    "long": 114,
+    "short": 85,
+    "neutral": 0
+  },
+  "avgConfidence": 70.71356783919597,
+  "avgMlProbability": 0,
+  "coverage": {
+    "marketRegime": 35,
+    "atrRatio": 35,
+    "volumeRatio": 35
+  },
+  "reasonCodes": {},
+  "byAsset": {
+    "BTCUSDT": 15,
+    "DOTUSDT": 7,
+    "AVAXUSDT": 11,
+    "XRPUSDT": 18,
+    "LINKUSDT": 8,
+    "ETHUSDT": 20,
+    "SOLUSDT": 23,
+    "BNBUSDT": 25,
+    "SUIUSDT": 4,
+    "ADAUSDT": 6,
+    "HYPEUSDT": 11,
+    "1000PEPEUSDT": 3,
+    "BCHUSDT": 8,
+    "TAOUSDT": 8,
+    "UNIUSDT": 5,
+    "ZECUSDT": 3,
+    "XLMUSDT": 9,
+    "WLDUSDT": 2,
+    "LTCUSDT": 9,
+    "TRXUSDT": 4
+  },
+  "byTimeframe": {
+    "1h": 134,
+    "4h": 32,
+    "15m": 20,
+    "1d": 10,
+    "5m": 3
+  },
+  "byDirection": {
+    "LONG": 114,
+    "SHORT": 85
+  },
+  "metrics": {
+    "totalTrades": 158,
+    "sufficientSample": true,
+    "winRate": 48.734177215189874,
+    "grossProfitPercent": 251.84895387351358,
+    "grossLossPercent": 114.0946098205823,
+    "netPnlPercent": 121.96179405293124,
+    "netPnlEstimatedCount": 119,
+    "profitFactorGross": 2.2073694302435034,
+    "profitFactorNet": 1.9981466649372284,
+    "expectancyGross": 0.8718629370438689,
+    "expectancyNet": 0.7719100889426028,
+    "payoffGross": 2.3220379720743347,
+    "payoffNet": 2.1019464916872144,
+    "avgWinGross": 3.2707656347209557,
+    "avgLossGross": 1.408575429883732,
+    "maxWinStreak": 12,
+    "maxLossStreak": 8,
+    "maxDrawdownGross": 28.54160142239317,
+    "maxDrawdownNet": 30.13524142239325,
+    "avgRMultipleNet": 0.2000979664370425,
+    "rMultipleSampleSize": 158,
+    "sharpeNet": {
+      "value": 0.2502054000804082,
+      "sampleSize": 158,
+      "sufficientSample": true
+    },
+    "sortinoNet": {
+      "value": 0.6807782159337996,
+      "sampleSize": 81,
+      "sufficientSample": true
+    }
+  },
+  "previousCount": 19
+}

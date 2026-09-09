@@ -5,6 +5,26 @@ import { redactSecrets } from './redaction';
 
 function slugTime(iso: string): string { return iso.replace(/[:.]/g, '-'); }
 
+function renderImprovementSection(run: MonitoringRunResult): string {
+  if (!['weekly', 'monthly', 'update'].includes(run.kind)) return '';
+  const improvement = run.improvement;
+  if (!improvement) return '\n## Hipóteses de melhoria contínua\n\nNenhuma hipótese de melhoria estatisticamente sustentada neste período.\n';
+  const lines = [
+    '## Hipóteses de melhoria contínua',
+    '',
+    improvement.summary,
+    '',
+    `- Novas hipóteses: ${improvement.newHypotheses.map((h) => h.id).join(', ') || 'nenhuma'}`,
+    `- Hipóteses recorrentes: ${improvement.recurringHypotheses.map((h) => h.id).join(', ') || 'nenhuma'}`,
+    `- Experimentos aguardando aprovação: ${improvement.awaitingApproval.map((h) => h.id).join(', ') || 'nenhum'}`,
+    `- Experimentos em andamento: ${improvement.inExperiment.map((h) => h.id).join(', ') || 'nenhum'}`,
+    `- Hipóteses rejeitadas: ${improvement.rejected.map((h) => h.id).join(', ') || 'nenhuma'}`,
+    `- Melhorias implementadas em monitoramento: ${improvement.implementedMonitoring.map((h) => h.id).join(', ') || 'nenhuma'}`,
+    `- Recomendações priorizadas: ${improvement.prioritizedRecommendations.map((h) => `${h.id} (${h.priority})`).join(', ') || 'nenhuma'}`,
+  ];
+  return `\n${lines.join('\n')}\n`;
+}
+
 export function renderMarkdownReport(run: MonitoringRunResult): string {
   const safe = redactSecrets(run);
   const checks = [...safe.checks, ...safe.notApplicable];
@@ -21,7 +41,8 @@ export function renderMarkdownReport(run: MonitoringRunResult): string {
     `## Checks\n\n` +
     checks.map((c) => `### ${c.status} — ${c.name}\n\n- id: ${c.id}\n- evidence: \`${JSON.stringify(redactSecrets(c.evidence))}\`\n- limitations: ${c.limitations.join('; ') || 'none'}\n- manual actions: ${c.suggestedManualActions.join('; ') || 'none'}\n`).join('\n') +
     `\n## Baseline comparison\n\n\`${JSON.stringify(redactSecrets(safe.baselineComparison ?? null))}\`\n\n` +
-    `## Limitations\n\n${safe.limitations.map((l) => `- ${l}`).join('\n') || '- none'}\n`;
+    renderImprovementSection(safe) +
+    `\n## Limitations\n\n${safe.limitations.map((l) => `- ${l}`).join('\n') || '- none'}\n`;
 }
 
 export async function writeMonitoringReport(run: MonitoringRunResult): Promise<{ mdPath: string; jsonPath: string; logPath: string }> {

@@ -1,3 +1,5 @@
+import type { ContinuousImprovementSummary } from './continuous-improvement';
+
 export type MonitoringStatus = 'OK' | 'WARNING' | 'CRITICAL' | 'NOT_APPLICABLE';
 export type MonitoringKind = 'daily' | 'update' | 'weekly' | 'monthly' | 'incident';
 
@@ -24,6 +26,7 @@ export interface MonitoringRunResult {
   checks: MonitoringCheckResult[];
   notApplicable: MonitoringCheckResult[];
   baselineComparison?: unknown;
+  improvement?: ContinuousImprovementSummary;
   limitations: string[];
   durationMs?: number;
 }

@@ -1,0 +1,23 @@
+{
+  "hypothesis": [
+    "redução de 50% a 70% no tempo de leitura e auditoria",
+    "redução de 40% a 60% no trabalho repetitivo de testes e documentação",
+    "redução de 30% a 50% no tempo entre especificação e implementação",
+    "redução relevante do acompanhamento manual de falhas e regressões"
+  ],
+  "manualAuditHoursMonthlyBefore": null,
+  "manualAuditHoursMonthlyAfter": null,
+  "automatedChecksRun": 0,
+  "failuresCaughtBeforeNextEnvironment": 0,
+  "regressionsDetected": 0,
+  "falseAlerts": 0,
+  "modelCallsByRoutine": {
+    "daily": 0,
+    "update": 0,
+    "weekly": 0,
+    "monthly": 0
+  },
+  "computationalCostNotes": [
+    "Rotinas determinísticas em no_agent=true; chamada de modelo só para resumo executivo em WARNING/CRITICAL se habilitada depois."
+  ]
+}

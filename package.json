@@ -22,7 +22,16 @@
     "report:status": "tsx --require dotenv/config scripts/report-status.ts",
     "test": "node --import tsx --test tests/**/*.test.ts",
     "test:eligibility": "node --import tsx --test tests/strategy-eligibility*.test.ts",
-    "test:weekly-digest": "tsx --require dotenv/config scripts/test-weekly-digest.ts"
+    "test:monitoring": "node --import tsx --test tests/monitoring*.test.ts",
+    "test:weekly-digest": "tsx --require dotenv/config scripts/test-weekly-digest.ts",
+    "monitoring:daily": "tsx --require dotenv/config scripts/monitoring-daily.ts",
+    "monitoring:update": "tsx --require dotenv/config scripts/monitoring-update.ts",
+    "monitoring:weekly": "tsx --require dotenv/config scripts/monitoring-weekly.ts",
+    "monitoring:monthly": "tsx --require dotenv/config scripts/monitoring-monthly.ts",
+    "monitoring:incident": "tsx --require dotenv/config scripts/monitoring-incident-summary.ts",
+    "monitoring:productivity-baseline": "tsx --require dotenv/config scripts/monitoring-productivity-baseline.ts",
+    "improvement:backlog": "tsx --require dotenv/config scripts/improvement-backlog.ts",
+    "validate:update": "tsx --require dotenv/config scripts/monitoring-update.ts"
   },
   "prisma": {
     "seed": "tsx --require dotenv/config scripts/safe-seed.ts"

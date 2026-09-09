@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-09T20:09:59.528Z",
+  "hypotheses": [
+    {
+      "id": "HYP-2026-0001",
+      "fingerprint": "634cd74c0acbd2d6",
+      "createdAt": "2026-09-09T16:05:37-03:00",
+      "updatedAt": "2026-09-09T16:05:37-03:00",
+      "sourceReport": "update:2026-09-09T16:05:37-03:00",
+      "observedProblem": "npm audit --audit-level=high",
+      "evidence": [
+        {
+          "durationMs": 9935,
+          "output": "to Interpretation Conflict - https://github.com/advisories/GHSA-mm7p-fcc7-pg87\nNodemailer has SMTP command injection due to unsanitized `envelope.size` parameter - https://github.com/advisories/GHSA-c7w3-x93f-qmm8\nNodemailer Vulnerable to SMTP Command Injection via CRLF in Transport name Option (EHLO/HELO)  - https://github.com/advisories/GHSA-vvjj-xcjg-gr5g\nNodemailer: CRLF injection in Nodemailer List-* header comments allows arbitrary message header injection - https://github.com/advisories/GHSA-268h-hp4c-crq3\nNodemailer jsonTransport bypasses disableFileAccess and disableUrlAccess during message normalization - https://github.com/advisories/GHSA-wqvq-jvpq-h66f\nNodemailer: Improper TLS Certificate Validation in OAuth2 Token Fetch Enables Credential Interception - https://github.com/advisories/GHSA-r7g4-qg5f-qqm2\nNodemailer’s addressparser is vulnerable to DoS caused by recursive calls - https://github.com/advisories/GHSA-rcmh-qjqh-p98v\nNodemailer: Message-level raw option bypasses disableFileAccess/disableUrlAccess, enabling arbitrary file read and full-response SSRF in the delivered message - https://github.com/advisories/GHSA-p6gq-j5cr-w38f\nNodemailer: resolveContent() on a MailMessage bypasses disableFileAccess/disableUrlAccess when called with the legacy signature - https://github.com/advisories/GHSA-8m3c-c648-2xjj\nNodemailer: IDN/Punycode domain allow-list bypass leads to email delivery to an attacker-controlled domain - https://github.com/advisories/GHSA-wmmp-3585-3rmp\nNodemailer: Quadratic (O(n²)) time complexity in addressparser allows remote denial of service via a crafted address list - https://github.com/advisories/GHSA-2x7j-588g-ccc2\nNodemailer: Recipient-domain validation bypass via RFC 5322 comment mis-parsing leads to email delivery to an attacker-controlled domain - https://github.com/advisories/GHSA-cc9r-2j5m-2m83\nfix available via `npm audit fix --force`\nWill install nodemailer@10.0.1, which is a breaking change\nnode_modules/nodemailer\n\npostcss  <=8.5.22\nSeverity: high\nPostCSS line return parsing error - https://github.com/advisories/GHSA-7fh5-64p2-3v2j\nPostCSS has XSS via Unescaped </style> in its CSS Stringify Output - https://github.com/advisories/GHSA-qx2v-qp2m-jg93\nPostCSS: Arbitrary file read and information disclosure via attacker-controlled sourceMappingURL in CSS comments - https://github.com/advisories/GHSA-6g55-p6wh-862q\nPostCSS: incomplete fix of GHSA-6g55-p6wh-862q — attacker-controlled sourceMappingURL reads arbitrary .map files when `from` is unset - https://github.com/advisories/GHSA-fxqj-rqcc-2cmp\nPostCSS: Path Traversal in Previous Source Map Auto-Loading (sourceMappingURL) leads to Arbitrary .map File Disclosure - https://github.com/advisories/GHSA-r28c-9q8g-f849\nfix available via `npm audit fix --force`\nWill install next@16.3.4, which is a breaking change\nnode_modules/next/node_modules/postcss\nnode_modules/postcss\n\nuuid  <11.1.1\nSeverity: moderate\nuuid: Missing buffer bounds check in v3/v5/v6 when buf is provided - https://github.com/advisories/GHSA-w5hq-g745-h8pq\nfix available via `npm audit fix --force`\nWill install node-cron@4.6.0, which is a breaking change\nnode_modules/uuid\n  node-cron  3.0.2 - 3.0.3\n  Depends on vulnerable versions of uuid\n  node_modules/node-cron\n\nwebpack  5.49.0 - 5.104.0\nwebpack buildHttp: allowedUris allow-list bypass via URL userinfo (@) leading to build-time SSRF behavior - https://github.com/advisories/GHSA-8fgc-7cc6-rx7x\nwebpack buildHttp HttpUriPlugin allowedUris bypass via HTTP redirects → SSRF + cache persistence - https://github.com/advisories/GHSA-38r7-794h-5758\nfix available via `npm audit fix --force`\nWill install webpack@5.110.3, which is outside the stated dependency range\nnode_modules/webpack\n\n25 vulnerabilities (3 low, 4 moderate, 14 high, 4 critical)\n\nTo address issues that do not require attention, run:\n  npm audit fix\n\nTo address all issues (including breaking changes), run:\n  npm audit fix --force\nCommand failed: npm audit --audit-level=high"
+        }
+      ],
+      "period": {
+        "start": "2026-09-09T19:04:34.162Z",
+        "end": "2026-09-09T19:05:37.707Z"
+      },
+      "recurrence": "ISOLATED",
+      "observations": 1,
+      "affectedAssets": [],
+      "affectedTimeframes": [],
+      "affectedFactors": [],
+      "affectedRegimes": [],
+      "problemType": "SOFTWARE_REGRESSION",
+      "priority": "HIGH",
+      "estimatedImpact": "Alto para confiabilidade técnica; confirmar por experimento.",
+      "estimatedEffort": "LOW",
+      "status": "OBSERVED",
+      "finalDecision": null,
+      "testedInVersion": null,
+      "inSampleResult": null,
+      "outOfSampleResult": null,
+      "resultByRegime": null,
+      "conclusion": null,
+      "hypothesis": "Investigar e corrigir isoladamente a falha técnica observada em npm audit --audit-level=high pode reduzir risco operacional sem alterar comportamento de trading.",
+      "expectedMechanism": "Remover regressão ou vulnerabilidade técnica aumenta confiabilidade do pipeline antes de merge/deploy.",
+      "proposedExperiment": "Criar branch isolada, registrar baseline, alterar apenas a causa técnica da falha, rodar validate:update e comparar relatório de regressão.",
+      "primaryMetrics": [
+        "validate:update OK",
+        "npm audit sem high quando aplicável",
+        "build/typecheck/lint/test OK"
+      ],
+      "safetyMetrics": [
+        "sem alteração em sinais",
+        "sem alteração em pesos",
+        "sem alteração em thresholds",
+        "sem alteração em execução/paper/live"
+      ],
+      "approvalCriteria": [
+        "superar baseline previamente registrado",
+        "não deteriorar métricas de segurança",
+        "resultado consistente out-of-sample",
+        "passar em todos os testes de software"
+      ],
+      "rejectionCriteria": [
+        "deteriorar drawdown/Sharpe/Sortino de forma material",
+        "não reproduzir fora da amostra",
+        "exigir faixa estreita de parâmetros",
+        "falhar testes automatizados"
+      ],
+      "risks": [
+        "mudança de dependência pode introduzir incompatibilidade",
+        "correção ampla pode mascarar regressão real"
+      ],
+      "overfittingRisk": "LOW"
+    }
+  ]
+}
