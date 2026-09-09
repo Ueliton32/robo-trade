@@ -34,5 +34,21 @@ next-env.d.ts
 prisma/*.db
 prisma/*.db-journal
 
+# ── Monitoring reports (generated locally; baselines stay versioned) ─────
+reports/monitoring/daily/*
+reports/monitoring/weekly/*
+reports/monitoring/monthly/*
+reports/monitoring/regressions/*
+reports/monitoring/incident/*
+reports/monitoring/incidents/*
+reports/monitoring/logs/*
+reports/monitoring/locks/*
+!reports/monitoring/**/.gitkeep
+reports/monitoring/baselines/*.json
+!reports/monitoring/baselines/productivity-baseline.json
+!reports/monitoring/baselines/weekly-stability-summary.json
+!reports/monitoring/baselines/monthly-drift-summary.json
+!reports/monitoring/baselines/update-validation-commands-v2.json
+
 .vercel
 .env*
