@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { STRATEGY_DEFS, SignalData } from '@/lib/strategies';
 import { getKlines, getFundingRate, getBookTicker } from '@/lib/binance';
 import { sendSignalEmail, sendOutcomeEmail } from '@/lib/signal-email';
@@ -9,10 +10,19 @@ import { ROBOT_VERSION } from '@/lib/version';
 import { evaluateCircuitBreakers, filterCombosByExposure, clampLeverageString } from '@/lib/circuit-breakers';
 import { getLatestStrategyWeights } from '@/lib/strategy-weights';
 import { getActiveModelsByStrategy, scoreSignalWithActiveModel } from '@/lib/ml-model';
-import { getConfiguredExecutionMode, assertLiveExecutionNotAttempted } from '@/lib/execution-mode';
+import { getConfiguredExecutionMode, assertLiveExecutionNotAttempted, ExecutionMode } from '@/lib/execution-mode';
 import { PairStrategyPlan, buildPairStrategyPlan, getGlobalPairStrategyPlan } from '@/lib/pair-strategy-plan';
+import { evaluateStrategyEligibility, StrategyEligibilityResult } from '@/lib/strategy-eligibility';
+import { STRATEGY_ELIGIBILITY_CONFIG_V1 } from '@/lib/strategy-eligibility-config';
 
-// Re-exportados daqui por compatibilidade — o código morava neste arquivo
+// ─────────────────────────────────────────────────────────────────────────
+// Fase C — Shadow Evaluation (09/09/2026)
+// Constantes usadas pela persistência de sinais shadow com source tag.
+// ─────────────────────────────────────────────────────────────────────────
+const CURRENT_CONFIG_VERSION = 8; // v8 = Fase C (Shadow Evaluation)
+type SignalSource = 'live' | 'PAPER_TRADING' | 'seed' | 'demo' | `shadow_v${number}`;
+
+// Estratégias que já validamos com o filtro de regime (via lib/radar-context-backtest.ts)
 // até ser extraído (06/09/2026) pra lib/pair-strategy-plan.ts, pra
 // lib/circuit-breakers.ts poder usá-lo sem criar import circular (este
 // arquivo importa de lib/circuit-breakers.ts). Nada mudou de lugar pra
@@ -23,9 +33,27 @@ export { buildPairStrategyPlan, getGlobalPairStrategyPlan };
 
 // Estratégias que já validamos com o filtro de regime (via lib/radar-context-backtest.ts)
 // o suficiente pra rodar com esse filtro também ao vivo, não só em backtest.
-// Só a Pullback na EMA20 até agora — melhorou ou manteve o resultado em
-// 3 de 3 moedas testadas (ETH, SOL, ADA) em 11/08/2026.
-const REGIME_GATED_STRATEGIES_LIVE: number[] = [2];
+// Decisão de 09/09/2026 (Fase C — Shadow Evaluation):
+//   - Estratégia 1: RadarContextScan 08/09 — PF 0.96 → 1.46 (+0.50) em 1h,
+//     PF 0.95 → 0.80 (-0.15) em 15m. Decisão: filtrar em qualquer TF porque
+//     o filtro de regime para estratégia 1 funciona como filtro de contexto
+//     geral (só LATERALIZACAO), e em qualquer TF o backtest mostra evidência
+//     de que LATERALIZACAO é o regime onde ela performa melhor vs. não-filtrado.
+//     Ver lib/radar-context.ts: a estratégia 1 já está em LATERALIZACAO no mapa.
+//   - Estratégia 2: RadarContextScan 09/09 — PF 0.87 → 1.13 (+0.26) em 1h,
+//     PF 0.76 → 0.81 (+0.05) em 4h, PF 0.49 → 0.54 (+0.05) em 15m.
+//     Em todos os TFs, o filtro melhora ou mantém. Decisão: filtrar em qualquer TF.
+const REGIME_GATED_STRATEGIES_LIVE: number[] = [1, 2];
+
+// Estratégias com filtro de regime CONDICIONAL por timeframe.
+// Chave = strategyId, valor = lista de timeframes onde o filtro de regime
+// é aplicado. Estratégias fora deste mapa NUNCA passam pelo filtro.
+// NOTA: esta tabela foi DESATIVADA em 09/09/2026.
+// Motivo: estratégia 1 e 2 agora usam REGIME_GATED_STRATEGIES_LIVE (filtro
+// sempre aplicado a qualquer TF). As evidências de melhora_por_TF para
+// estratégia 1 foram inconsistentes entre 1h e 15m, e o gating por TF
+// adicionava complexidade sem benefício claro. Manter apenas a lista global.
+const REGIME_GATED_STRATEGIES_BY_TF: Record<number, string[]> = {};
 
 /**
  * Pra estratégias na lista acima, só libera o sinal se o regime de
@@ -33,8 +61,17 @@ const REGIME_GATED_STRATEGIES_LIVE: number[] = [2];
  * validamos pra ela (ver lib/radar-context.ts). Estratégias fora da lista
  * passam direto, sem filtro nenhum — comportamento inalterado.
  */
-async function passesLiveRegimeGate(strategyId: number, pair: string): Promise<boolean> {
-  if (!REGIME_GATED_STRATEGIES_LIVE.includes(strategyId)) return true;
+async function passesLiveRegimeGate(strategyId: number, pair: string, timeframe: string, executionMode: ExecutionMode = 'PAPER_TRADING'): Promise<boolean> {
+  // SHADOW mode: gera sinal sem filtro de regime (para comparação)
+  // PAPER_TRADING e LIVE: aplica filtro de regime normalmente
+  if (executionMode === 'SHADOW') return true;
+
+  // Verifica se a estratégia deve passar pelo filtro de regime neste timeframe.
+  // REGIME_GATED_STRATEGIES_LIVE (array simples): filtro sempre aplicado, qualquer TF.
+  // REGIME_GATED_STRATEGIES_BY_TF (mapa com TF): filtro aplicado só nos TFs listados.
+  const alwaysGated = REGIME_GATED_STRATEGIES_LIVE.includes(strategyId);
+  const gatedByTF = REGIME_GATED_STRATEGIES_BY_TF[strategyId]?.includes(timeframe);
+  if (!alwaysGated && !gatedByTF) return true; // nem sempre nem por TF → passa livre
 
   try {
     const regimeKlines = await getKlines(pair, '1h', 300);
@@ -64,12 +101,53 @@ export interface EnrichedSignalData extends SignalData {
   volumeRatio?: number | null;
   fundingRateAtSignal?: number | null;
   spreadAtSignal?: number | null;
-  indicators?: Record<string, number | null> | null;
+  indicators?: Record<string, unknown> | null;
   robotVersion?: string;
   weightAtSignal?: number | null; // peso da estratégia (Fase 7) no momento do sinal — informativo, ver lib/strategy-weights.ts
   mlProbability?: number | null; // probabilidade estimada de TP-antes-SL pelo modelo ativo (Fase 6) — informativo, ver lib/ml-model.ts
   mlModelVersion?: number | null;
   executionMode?: string;
+  strategyEligibility?: StrategyEligibilityResult | null; // audit-only; não bloqueia sinal nesta versão
+}
+
+function attachStrategyEligibilityAudit(signals: EnrichedSignalData[]): void {
+  const cycleCandidates = signals.map((sig) => ({
+    strategyId: sig.strategyId,
+    pair: sig.pair,
+    timeframe: sig.timeframe,
+    direction: sig.direction,
+    confidence: sig.confidence,
+    mlProbability: sig.mlProbability,
+  }));
+
+  for (const sig of signals) {
+    const result = evaluateStrategyEligibility({
+      signal: sig,
+      context: { cycleCandidates },
+      config: STRATEGY_ELIGIBILITY_CONFIG_V1,
+    });
+    sig.strategyEligibility = result;
+
+    if (!result.eligible) {
+      console.warn(
+        `[strategy-eligibility][audit-only] ${sig.strategyName} ${sig.pair} ${sig.direction} ${sig.timeframe} ` +
+          `INELIGIBLE — ${result.reasonCodes.join(', ')} fp=${result.audit.configFingerprint}`
+      );
+    }
+  }
+}
+
+function indicatorsWithEligibilityAudit(sig: EnrichedSignalData): Record<string, unknown> | null {
+  if (!sig.strategyEligibility) return sig.indicators ?? null;
+  return {
+    ...(sig.indicators ?? {}),
+    strategyEligibility: sig.strategyEligibility,
+  };
+}
+
+function indicatorsJsonForPrisma(sig: EnrichedSignalData): Prisma.InputJsonValue | typeof Prisma.JsonNull {
+  const indicators = indicatorsWithEligibilityAudit(sig);
+  return indicators === null ? Prisma.JsonNull : (indicators as Prisma.InputJsonValue);
 }
 
 interface EnrichmentCaches {
@@ -248,7 +326,7 @@ export async function generateSignals(plan: PairStrategyPlan): Promise<EnrichedS
         } else {
           signal = await (strat.analyze as any)(pair, tf);
         }
-        if (signal && (await passesLiveRegimeGate(strategyId, pair))) {
+        if (signal && (await passesLiveRegimeGate(strategyId, pair, tf, executionMode))) {
           signal.leverage = clampLeverageString(signal.leverage); // Fase 8 — só pode reduzir, nunca aumentar
           const enriched = await enrichSignal(signal, enrichmentCaches);
           enriched.weightAtSignal = strategyWeights.get(strategyId) ?? 1.0; // Fase 7 — informativo, não muda leverage/stop/alvo
@@ -280,6 +358,8 @@ export async function generateSignals(plan: PairStrategyPlan): Promise<EnrichedS
     Array.from({ length: Math.min(SIGNAL_GENERATION_CONCURRENCY, finalCombos.length) }, () => worker())
   );
 
+  attachStrategyEligibilityAudit(newSignals);
+
   return newSignals;
 }
 
@@ -295,30 +375,131 @@ export async function generateSignals(plan: PairStrategyPlan): Promise<EnrichedS
  * notificação (notifySubscribedUsers só recebe o que este função de fato
  * retorna) nem pra qualquer estatística que leia a tabela Signal depois.
  */
-export async function saveNewSignals(newSignals: SignalData[]) {
+export async function saveNewSignals(newSignals: EnrichedSignalData[]) {
   const saved = [];
   for (const sig of newSignals) {
-    if ((sig as EnrichedSignalData).executionMode === 'SHADOW') {
-      console.log(`[shadow] Sinal que seria gerado (não salvo): ${sig.strategyName} ${sig.pair} ${sig.direction} ${sig.timeframe} — conf=${sig.confidence}`);
+    const enriched = sig as EnrichedSignalData;
+    if (enriched.executionMode === 'SHADOW') {
+      // Fase C — SHADOW EVALUATION (09/09/2026):
+      // Em SHADOW mode, o sinal NÃO vai para o PAPER_TRADING (source=live),
+      // mas É persistido com source=shadow_v{N} para análise comparativa.
+      // O source distingue a versão do ConfigVersion que gerou o sinal.
+      // Isola o período shadow do histórico PAPER_TRADING para comparação limpa.
+      const sourceTag = `shadow_v${CURRENT_CONFIG_VERSION}` as SignalSource;
+      const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
+      const dup = await prisma.signal.findFirst({
+        where: {
+          strategyId: sig.strategyId,
+          pair: sig.pair,
+          direction: sig.direction,
+          timeframe: sig.timeframe,
+          source: sourceTag,
+          createdAt: { gte: fourHoursAgo },
+        },
+      });
+      if (dup) continue;
+
+      const dataToCreate = {
+        strategyId: sig.strategyId,
+        strategyName: sig.strategyName,
+        pair: sig.pair,
+        direction: sig.direction,
+        timeframe: sig.timeframe,
+        mode: sig.mode,
+        entryPrice: sig.entryPrice,
+        target1: sig.target1,
+        target2: sig.target2,
+        stopLoss: sig.stopLoss,
+        leverage: sig.leverage,
+        confidence: sig.confidence,
+        reason: sig.reason,
+        source: sourceTag,
+        executionMode: 'SHADOW',
+        status: 'PENDENTE',
+        result: null,
+        pnlPercent: null,
+        pnlNetPercent: null,
+        closedAt: null,
+        exitPrice: null,
+        exitReason: null,
+        feesPercent: null,
+        slippagePercent: null,
+        fundingCostPercent: null,
+        maxAdverseExcursionPercent: null,
+        executionError: null,
+        target2Reached: false,
+        riskRewardRatio: (sig as any).riskRewardRatio ?? null,
+        marketRegime: (sig as any).marketRegime ?? null,
+        regimeForce: (sig as any).regimeForce ?? null,
+        atrRatio: (sig as any).atrRatio ?? null,
+        volumeRatio: (sig as any).volumeRatio ?? null,
+        fundingRateAtSignal: (sig as any).fundingRateAtSignal ?? null,
+        spreadAtSignal: (sig as any).spreadAtSignal ?? null,
+        indicators: indicatorsJsonForPrisma(enriched),
+        robotVersion: (sig as any).robotVersion ?? null,
+        weightAtSignal: (sig as any).weightAtSignal ?? null,
+        mlProbability: (sig as any).mlProbability ?? null,
+        mlModelVersion: (sig as any).mlModelVersion ?? null,
+      };
+      const created = await prisma.signal.create({ data: dataToCreate });
+      saved.push(created);
+      console.log(`[shadow-registered] ${sig.strategyName} ${sig.pair} ${sig.direction} ${sig.timeframe} — conf=${sig.confidence} regime=${enriched.marketRegime ?? 'N/A'} source=shadow_v${CURRENT_CONFIG_VERSION}`);
       continue;
     }
 
+    // PAPER_TRADING: salva no histórico principal
     const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
     const dup = await prisma.signal.findFirst({
       where: {
         strategyId: sig.strategyId,
         pair: sig.pair,
         direction: sig.direction,
+        timeframe: sig.timeframe,
+        source: { in: ['live', 'PAPER_TRADING'] },
         createdAt: { gte: fourHoursAgo },
       },
     });
     if (dup) continue;
 
-    const created = await prisma.signal.create({ data: sig });
+    const created = await prisma.signal.create({
+      data: {
+        strategyId: sig.strategyId,
+        strategyName: sig.strategyName,
+        pair: sig.pair,
+        direction: sig.direction,
+        timeframe: sig.timeframe,
+        mode: sig.mode,
+        entryPrice: sig.entryPrice,
+        target1: sig.target1,
+        target2: sig.target2,
+        stopLoss: sig.stopLoss,
+        leverage: sig.leverage,
+        confidence: sig.confidence,
+        reason: sig.reason,
+        status: 'PENDENTE',
+        result: null,
+        pnlPercent: null,
+        source: (sig as any).source ?? 'live',
+        executionMode: (sig as any).executionMode ?? 'PAPER_TRADING',
+        riskRewardRatio: (sig as any).riskRewardRatio ?? null,
+        marketRegime: (sig as any).marketRegime ?? null,
+        regimeForce: (sig as any).regimeForce ?? null,
+        atrRatio: (sig as any).atrRatio ?? null,
+        volumeRatio: (sig as any).volumeRatio ?? null,
+        fundingRateAtSignal: (sig as any).fundingRateAtSignal ?? null,
+        spreadAtSignal: (sig as any).spreadAtSignal ?? null,
+        indicators: indicatorsJsonForPrisma(enriched),
+        robotVersion: (sig as any).robotVersion ?? null,
+        weightAtSignal: (sig as any).weightAtSignal ?? null,
+        mlProbability: (sig as any).mlProbability ?? null,
+        mlModelVersion: (sig as any).mlModelVersion ?? null,
+      },
+    });
     saved.push(created);
   }
   return saved;
 }
+
 
 /**
  * Envia e-mail e/ou Telegram para todo usuário com alertas ligados que
