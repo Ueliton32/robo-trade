@@ -1,0 +1,110 @@
+{
+  "generatedAt": "2026-09-10T13:39:41.262Z",
+  "results": [
+    {
+      "name": "home",
+      "url": "http://127.0.0.1:3000/",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3000/login",
+      "title": "Robô Trade - Sinais de Crypto",
+      "bodyText": "Robô Trade\n\nSinais de trading multi-estratégia\n\nEntrar\n\nAcesse seu painel de trading\n\nEmail\nSenha\nEntrar\n\nNão tem conta? Criar conta",
+      "consoleMessages": [],
+      "pageErrors": [],
+      "screenshot": "reports/experiments/HYP-2026-0001/screenshots/home.png"
+    },
+    {
+      "name": "login",
+      "url": "http://127.0.0.1:3000/login",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3000/login",
+      "title": "Robô Trade - Sinais de Crypto",
+      "bodyText": "Robô Trade\n\nSinais de trading multi-estratégia\n\nEntrar\n\nAcesse seu painel de trading\n\nEmail\nSenha\nEntrar\n\nNão tem conta? Criar conta",
+      "consoleMessages": [],
+      "pageErrors": [],
+      "screenshot": "reports/experiments/HYP-2026-0001/screenshots/login.png"
+    },
+    {
+      "name": "signup",
+      "url": "http://127.0.0.1:3000/signup",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3000/signup",
+      "title": "Robô Trade - Sinais de Crypto",
+      "bodyText": "Robô Trade\n\nCrie sua conta para começar\n\nCriar Conta\n\nPreencha seus dados abaixo\n\nNome\nEmail\nSenha\nCriar Conta\n\nJá tem conta? Entrar",
+      "consoleMessages": [],
+      "pageErrors": [],
+      "screenshot": "reports/experiments/HYP-2026-0001/screenshots/signup.png"
+    },
+    {
+      "name": "dashboard",
+      "url": "http://127.0.0.1:3000/dashboard",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3000/login",
+      "title": "Robô Trade - Sinais de Crypto",
+      "bodyText": "Robô Trade\n\nSinais de trading multi-estratégia\n\nEntrar\n\nAcesse seu painel de trading\n\nEmail\nSenha\nEntrar\n\nNão tem conta? Criar conta",
+      "consoleMessages": [],
+      "pageErrors": [],
+      "screenshot": "reports/experiments/HYP-2026-0001/screenshots/dashboard.png"
+    },
+    {
+      "name": "radar",
+      "url": "http://127.0.0.1:3000/dashboard/radar",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3000/login",
+      "title": "Robô Trade - Sinais de Crypto",
+      "bodyText": "Robô Trade\n\nSinais de trading multi-estratégia\n\nEntrar\n\nAcesse seu painel de trading\n\nEmail\nSenha\nEntrar\n\nNão tem conta? Criar conta",
+      "consoleMessages": [],
+      "pageErrors": [],
+      "screenshot": "reports/experiments/HYP-2026-0001/screenshots/radar.png"
+    },
+    {
+      "name": "backtest",
+      "url": "http://127.0.0.1:3000/dashboard/backtest",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3000/login",
+      "title": "Robô Trade - Sinais de Crypto",
+      "bodyText": "Robô Trade\n\nSinais de trading multi-estratégia\n\nEntrar\n\nAcesse seu painel de trading\n\nEmail\nSenha\nEntrar\n\nNão tem conta? Criar conta",
+      "consoleMessages": [],
+      "pageErrors": [],
+      "screenshot": "reports/experiments/HYP-2026-0001/screenshots/backtest.png"
+    },
+    {
+      "name": "configuracoes",
+      "url": "http://127.0.0.1:3000/dashboard/configuracoes",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3000/login",
+      "title": "Robô Trade - Sinais de Crypto",
+      "bodyText": "Robô Trade\n\nSinais de trading multi-estratégia\n\nEntrar\n\nAcesse seu painel de trading\n\nEmail\nSenha\nEntrar\n\nNão tem conta? Criar conta",
+      "consoleMessages": [],
+      "pageErrors": [],
+      "screenshot": "reports/experiments/HYP-2026-0001/screenshots/configuracoes.png"
+    },
+    {
+      "name": "estatisticas",
+      "url": "http://127.0.0.1:3000/dashboard/estatisticas",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3000/login",
+      "title": "Robô Trade - Sinais de Crypto",
+      "bodyText": "Robô Trade\n\nSinais de trading multi-estratégia\n\nEntrar\n\nAcesse seu painel de trading\n\nEmail\nSenha\nEntrar\n\nNão tem conta? Criar conta",
+      "consoleMessages": [],
+      "pageErrors": [],
+      "screenshot": "reports/experiments/HYP-2026-0001/screenshots/estatisticas.png"
+    },
+    {
+      "name": "login-invalid",
+      "url": "http://127.0.0.1:3000/login",
+      "status": null,
+      "finalUrl": "http://127.0.0.1:3000/login",
+      "title": "Robô Trade - Sinais de Crypto",
+      "bodyText": "Robô Trade\n\nSinais de trading multi-estratégia\n\nEntrar\n\nAcesse seu painel de trading\n\nEmail ou senha inválidos\nEmail\nSenha\nEntrar\n\nNão tem conta? Criar conta",
+      "consoleMessages": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ],
+      "pageErrors": [],
+      "screenshot": "reports/experiments/HYP-2026-0001/screenshots/login-invalid.png"
+    }
+  ],
+  "issues": []
+}

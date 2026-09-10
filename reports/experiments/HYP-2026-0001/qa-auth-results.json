@@ -1,0 +1,277 @@
+{
+  "generatedAt": "2026-09-10T13:41:33.877Z",
+  "user": {
+    "id": "[REDACTED]",
+    "email": "[REDACTED]",
+    "role": "user"
+  },
+  "results": [
+    {
+      "name": "dashboard",
+      "url": "http://127.0.0.1:3000/dashboard",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3000/dashboard",
+      "title": "Robô Trade - Sinais de Crypto",
+      "bodyText": "Robô Trade\nBinance conectada\nDashboard\nEstratégias\nEstatísticas\nBacktest\nRadar\nConfigurações\nSair\nDashboard\n\nBem-vindo, Ueliton\n\n10:41:14\nDay Trade\nSwing\nAmbos\nAnalisar Agora\nPiloto ativo — último ciclo 11min atrás\nDivergência: 6h atrás\nEstabilidade: 21h atrás\n14 combinação(ões) pausada(s)\nVer atividade recente\nÍndice de Confiabilidade do Robô\nAtualizar\nMede maturidade técnica e operacional (uptime, amostra, estabilidade das decisões) — nunca é recomendação de investimento. Pode cair, não só subir: uma pausa recente ou divergência nova reduz a pontuação até o sistema provar estável de novo.\n57\nde 100\nUptime (14d)\n10/20\nAmostra ao vivo\n20/20\nEstratégia estável\n2/20\nStability-scans\n5/20\nSem divergência nova\n20/20\n03/09\n04/09\n05/09\n05/09\n06/09\n07/09\n08/09\n09/09\n10/09\n0\n25\n50\n75\n100\nMercado em Tempo Real\nBTC/USDT\n-3.00%\n\n$76,949.70\n\nVol 24h\n$13.43B\nFunding\n0.0079%\nOpen Interest\n$108.21K\nETH/USDT\n-3.29%\n\n$2,424.32\n\nVol 24h\n$9.69B\nFunding\n0.0051%\nOpen Interest\n$2.32M\nSOL/USDT\n-4.33%\n\n$99.3900\n\nVol 24h\n$2.07B\nFunding\n-0.0017%\nOpen Interest\n$8.03M\nBNB/USDT\n-5.24%\n\n$709.2400\n\nVol 24h\n$523.96M\nFunding\n0.0000%\nOpen Interest\n$605.16K\nXRP/USDT\n-4.82%\n\n$1.3602\n\nVol 24h\n$1.04B\nFunding\n-0.0007%\nOpen Interest\n$306.48M\nADA/USDT\n-4.23%\n\n$0.210400\n\nVol 24h\n$206.64M\nFunding\n0.0089%\nOpen Interest\n$380.86M\nSUI/USDT\n-7.60%\n\n$0.750400\n\nVol 24h\n$326.66M\nFunding\n-0.0038%\nOpen Interest\n$136.27M\nAVAX/USDT\n-4.65%\n\n$7.6100\n\nVol 24h\n$99.12M\nFunding\n0.0017%\nOpen Interest\n$8.44M\nLINK/USDT\n-3.83%\n\n$11.6930\n\nVol 24h\n$201.60M\nFunding\n0.0033%\nOpen Interest\n$9.49M\nLTC/USDT\n-3.50%\n\n$52.3500\n\nVol 24h\n$80.46M\nFunding\n0.0054%\nOpen Interest\n$1.31M\nTRX/USDT\n-0.04%\n\n$0.338170\n\nVol 24h\n$45.47M\nFunding\n-0.0092%\nOpen Interest\n$289.48M\nXLM/USDT\n-5.85%\n\n$0.177630\n\nVol 24h\n$74.45M\nFunding\n-0.0015%\nOpen Interest\n$187.74M\nTAO/USDT\n-8.68%\n\n$242.8500\n\nVol 24h\n$189.76M\nFunding\n0.0034%\nOpen Interest\n$280.54K\nWLD/USDT\n-10.09%\n\n$0.405300\n\nVol 24h\n$212.31M\nFunding\n-0.0019%\nOpen Interest\n$182.59M\nZEC/USDT\n-8.36%\n\n$1,172.15\n\nVol 24h\n$2.62B\nFunding\n0.0013%\nOpen Interest\n$541.19K\n1000PEPE/USDT\n-9.00%\n\n$0.003342\n\nVol 24h\n$272.26M\nFunding\n-0.0171%\nOpen Interest\n$18.83B\nBCH/USDT\n-11.63%\n\n$228.2700\n\nVol 24h\n$126.94M\nFunding\n0.0063%\nOpen Interest\n$297.10K\nDOT/USDT\n-6.42%\n\n$1.0895\n\nVol 24h\n$98.42M\nFunding\n0.0100%\nOpen Interest\n$40.47M\nUNI/USDT\n-11.67%\n\n$5.9040\n\nVol 24h\n$257.04M\nFunding\n0.0050%\nOpen Interest\n$22.50M\nAlertas Recentes\n15\nAVAX\nSHORT\n1h\n\nRompimento de Range · $7.6560 · 40min\n\nXRP\nSHORT\n1h\n\nRompimento de Range · $1.3683 · 40min\n\nBNB\nSHORT\n1h\n\nRompimento de Range · $712.4800 · 40min\n\nSOL\nSHORT\n1h\n\nRompimento de Range · $100.0500 · 40min\n\nETH\nSHORT\n1h\n\nRompimento de Range · $2,435.90 · 40min\n\nBTC\nSHORT\n1h\n\nRompimento de Range · $77,111.60 · 40min\n\nZEC\nSHORT\n1h\n\nCompressão de Volatilidade · $1,214.58 · 5h\n\nBNB\nSHORT\n4h\n\nRompimento de Range · $721.6400 · 13h\n\nAVAX\nSHORT\n1h\n\nRompimento de Range · $7.7320 · 14h\n\nSOL\nSHORT\n1h\n\nRompimento de Range · $101.3000 · 14h\n\nSUI\nSHORT\n1h\n\nRompimento de Range · $0.791300 ·",
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [
+        {
+          "url": "http://127.0.0.1:3000/dashboard/estrategias?_rsc=j79Vj4yH5aoiafxS",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/estatisticas?_rsc=j79Vj4yH5aoiafxS",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/backtest?_rsc=j79Vj4yH5aoiafxS",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/radar?_rsc=j79Vj4yH5aoiafxS",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/configuracoes?_rsc=j79Vj4yH5aoiafxS",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard?_rsc=IOe_mmh6jQxP6_Ru",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/estrategias?_rsc=IOe_mmh6jQxP6_Ru",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/estatisticas?_rsc=IOe_mmh6jQxP6_Ru",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/backtest?_rsc=IOe_mmh6jQxP6_Ru",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/radar?_rsc=IOe_mmh6jQxP6_Ru",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/configuracoes?_rsc=IOe_mmh6jQxP6_Ru",
+          "failure": "net::ERR_ABORTED"
+        }
+      ],
+      "screenshot": "reports/experiments/HYP-2026-0001/screenshots-auth/dashboard.png"
+    },
+    {
+      "name": "radar",
+      "url": "http://127.0.0.1:3000/dashboard/radar",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3000/dashboard/radar",
+      "title": "Robô Trade - Sinais de Crypto",
+      "bodyText": "Robô Trade\nBinance conectada\nDashboard\nEstratégias\nEstatísticas\nBacktest\nRadar\nConfigurações\nSair\nRadar\nem construção\n\nCamada de dados — universo dinâmico de pares e indicadores, base pro classificador de regime que vem a seguir\n\nUniverso (top 100 por volume)\n\nContratos perpétuos USDT-M da Binance Futures, ranqueados por volume real das últimas 24h\n\nAtualizar\n#\tPar\tVolume 24h (USDT)\tVariação 24h\n1\tBTC/USDT\t$13438.2M\t-3.07%\n2\tETH/USDT\t$9666.3M\t-3.39%\n3\tZEC/USDT\t$2620.7M\t-8.36%\n4\tSOL/USDT\t$2060.7M\t-4.52%\n5\tIOST/USDT\t$1273.4M\t-19.26%\n6\tXRP/USDT\t$1041.1M\t-4.91%\n7\tHYPE/USDT\t$798.1M\t-5.97%\n8\tDOGE/USDT\t$628.6M\t-7.71%\n9\tBNB/USDT\t$524.2M\t-5.35%\n10\tVTHO/USDT\t$491.2M\t+40.92%\n11\tNEAR/USDT\t$421.5M\t-6.67%\n12\tPUMP/USDT\t$401.2M\t-15.26%\n13\tSUI/USDT\t$326.7M\t-7.60%\n14\tUSELESS/USDT\t$285.6M\t-25.64%\n15\t1000PEPE/USDT\t$272.3M\t-9.00%\n16\tVVV/USDT\t$263.3M\t-8.07%\n17\tUNI/USDT\t$257.1M\t-11.70%\n18\tENA/USDT\t$254.4M\t-9.87%\n19\tPONS/USDT\t$251.5M\t-25.28%\n20\t牛来/USDT\t$224.6M\t-31.67%\n21\tWLD/USDT\t$212.3M\t-10.09%\n22\tADA/USDT\t$207.9M\t-4.10%\n23\tLINK/USDT\t$201.6M\t-3.83%\n24\tTAO/USDT\t$189.8M\t-8.68%\n25\tARB/USDT\t$186.1M\t-10.23%\n26\tTRUMP/USDT\t$180.6M\t-11.81%\n27\tRAYSOL/USDT\t$175.5M\t-3.65%\n28\tMARSCOIN/USDT\t$137.0M\t-17.68%\n29\tBCH/USDT\t$126.9M\t-11.63%\n30\tDASH/USDT\t$125.9M\t-12.05%\n31\tLIT/USDT\t$116.7M\t-8.21%\n32\tBULLA/USDT\t$111.7M\t-4.15%\n33\tKAT/USDT\t$106.8M\t-11.96%\n34\tAVAX/USDT\t$99.1M\t-4.65%\n35\tDOT/USDT\t$98.4M\t-6.59%\n36\tAAVE/USDT\t$89.9M\t-5.81%\n37\tUAI/USDT\t$86.7M\t-7.41%\n38\tONDO/USDT\t$85.7M\t-6.98%\n39\tSOPH/USDT\t$83.7M\t-21.55%\n40\tPAXG/USDT\t$82.9M\t-1.07%\n41\tFIL/USDT\t$81.2M\t-5.14%\n42\tASTER/USDT\t$80.8M\t-5.95%\n43\tLTC/USDT\t$80.5M\t-3.50%\n44\tBTR/USDT\t$80.1M\t-7.36%\n45\tCOTI/USDT\t$77.4M\t-1.93%\n46\tPENGU/USDT\t$74.6M\t-7.46%\n47\tXLM/USDT\t$74.4M\t-5.84%\n48\tREZ/USDT\t$69.3M\t+0.99%\n49\tAPT/USDT\t$68.0M\t-7.47%\n50\tFARTCOIN/USDT\t$59.2M\t-15.50%\n51\tXMR/USDT\t$55.9M\t+1.18%\n52\tFLOCK/USDT\t$55.3M\t-0.98%\n53\tEGLD/USDT\t$54.8M\t+5.53%\n54\tINJ/USDT\t$54.4M\t-5.03%\n55\tZEN/USDT\t$52.2M\t-8.65%\n56\tXAUT/USDT\t$50.9M\t-1.02%\n57\t龙虾/USDT\t$50.6M\t-39.20%\n58\tXPL/USDT\t$48.8M\t-10.13%\n59\t1000SHIB/USDT\t$47.5M\t-6.25%\n60\tATOM/USDT\t$46.6M\t-8.08%\n61\tBEAT/USDT\t$46.3M\t-33.68%\n62\tTRX/USDT\t$45.4M\t-0.09%\n63\tAKE/USDT\t$44.0M\t+4.64%\n64\tETC/USDT\t$42.4M\t-7.02%\n65\tHEMI/USDT\t$41.8M\t-2.13%\n66\tLAB/USDT\t$41.7M\t-26.71%\n67\tETHFI/USDT\t$40.6M\t+2.80%\n68\tOP/USDT\t$40.0M\t-6.75%\n69\tSAHARA/USDT\t$39.8M\t-0.68%\n70\tVIRTUAL/USDT\t$37.6M\t-9.88%\n71\tFET/USDT\t$36.1M\t-7.80%\n72\tPHA/USDT\t$35.9M\t-9.03%\n73\tANIME/USDT\t$34.6M\t-4.75%\n74\tCRV/USDT\t$34.0M\t-5.68%\n75\tWLFI/USDT\t$33.0M\t+0.50%\n76\tICP/USDT\t$32.0M\t-3.73%\n77\tMINA/USDT\t$31.6M\t-2.15%\n78\tJUP/USDT\t$31.4M\t-8.85%\n79\tLSK/USDT\t$30.4M\t-1.84%\n80\tBR/USDT\t$30.3M\t-13.14%\n81\tHBAR/USDT\t$29.1M\t-4.13%\n82\tFF/USDT\t$28.6M\t+0.84%\n83\tTIA/USDT\t$27.8M\t-5.62%\n84\t1000BONK/USDT\t$27.7M\t-9.89%\n85\tAERO/USDT\t$26.3M\t-5.13%\n86\tBIRB/USDT\t$26.1M\t+4.84%\n87\tONG/USDT\t$24.9M\t-16.21%\n88\tKAS/USDT\t$24.5M\t+6.10%\n89\tTUT/USDT\t$24.3M\t-12.63%\n90\tCHIP/USDT\t$24.3M\t-17.05%\n91\tARX/USDT\t$24.1M\t-4.65%\n92\tPOL/USDT\t$23.6M\t-5.58%\n93\tSTRK/USDT\t$23.5M\t-6.69%\n94\tZRO/USDT\t$22.6M\t-6.88%\n95\tFORM/USDT\t$22.5M\t-14.96%",
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [
+        {
+          "url": "http://127.0.0.1:3000/dashboard?_rsc=RA9zIDwX93gvuEtB",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/estrategias?_rsc=RA9zIDwX93gvuEtB",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/backtest?_rsc=RA9zIDwX93gvuEtB",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/configuracoes?_rsc=RA9zIDwX93gvuEtB",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard?_rsc=vtS46RFkYuDtcD8d",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/estrategias?_rsc=vtS46RFkYuDtcD8d",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/backtest?_rsc=vtS46RFkYuDtcD8d",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/estatisticas?_rsc=vtS46RFkYuDtcD8d",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/radar?_rsc=vtS46RFkYuDtcD8d",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/configuracoes?_rsc=vtS46RFkYuDtcD8d",
+          "failure": "net::ERR_ABORTED"
+        }
+      ],
+      "screenshot": "reports/experiments/HYP-2026-0001/screenshots-auth/radar.png"
+    },
+    {
+      "name": "backtest",
+      "url": "http://127.0.0.1:3000/dashboard/backtest",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3000/dashboard/backtest",
+      "title": "Robô Trade - Sinais de Crypto",
+      "bodyText": "Robô Trade\nBinance conectada\nDashboard\nEstratégias\nEstatísticas\nBacktest\nRadar\nConfigurações\nSair\nBacktest\n\nTeste uma estratégia contra o histórico real da Binance, sem esperar o robô acumular trades ao vivo\n\nIsso roda a MESMA lógica de decisão do robô ao vivo contra candles históricos reais da Binance — não é uma simulação aproximada. Os resultados já descontam ~0,1% de taxas/slippage por operação pra não ficar otimista demais. Ainda assim: desempenho passado não garante desempenho futuro — use isto pra comparar variações e formar hipóteses, não como previsão.\n\nBacktest vs Ao Vivo\n\nCompara o que o backtest previu com o que está acontecendo de verdade, combinação por combinação\n\nÚltimos 7 dias\nAtualizar\nMoeda\tEstratégia\tTF\tPF Backtest\tPF Ao Vivo\tTrades Ao Vivo\tStatus\tAção\nBTC/USDT\tRompimento de Range\t4h\t1.28\t—\t0\taguardando amostra\tPausar\nETH/USDT\tRompimento de Range\t15m\t0.81\t3.11\t1amostra pequena\taguardando amostra\tPausar\nBTC/USDT\tRompimento de Range\t15m\t0.73\t—\t0\taguardando amostra\tPausar\nBTC/USDT\tRompimento de Range\t1h\t0.68\t0.00\t4amostra pequena\taguardando amostra\tPausar\nETH/USDT\tRompimento de Range\t1h\t1.07\t0.17\t4amostra pequena\taguardando amostra\tPausar\nETH/USDT\tFunding Extremo\t1h\t0.00\t—\t0\taguardando amostra\tPausar\nBTC/USDT\tFunding Extremo\t1h\t0.00\t—\t0\taguardando amostra\tPausar\nSOL/USDT\tRompimento de Range\t1h\t0.64\t0.00\t4amostra pequena\taguardando amostra\tPausar\nETH/USDT\tRompimento de Range\t4h\t1.62\t—\t0\taguardando amostra\tPausar\nSOL/USDT\tRompimento de Range\t15m\t0.97\t—\t0\taguardando amostra\tPausar\nSOL/USDT\tCompressão de Volatilidade\t4h\t1.63\t0.00\t2amostra pequena\taguardando amostra\tPausar\nSOL/USDT\tRompimento de Range\t4h\t3.65\t—\t0\taguardando amostra\tPausar\nSOL/USDT\tCompressão de Volatilidade\t1h\t1.54\t1.66\t2amostra pequena\taguardando amostra\tPausar\nSOL/USDT\tCompressão de Volatilidade\t1d\t0.00\t0.00\t1amostra pequena\taguardando amostra\tPausar\nBNB/USDT\tRompimento de Range\t4h\t0.78\t—\t0\taguardando amostra\tPausar\nBNB/USDT\tRompimento de Range\t15m\t0.83\t—\t0\taguardando amostra\tPausar\nBNB/USDT\tRompimento de Range\t1h\t0.73\t9.03\t2amostra pequena\taguardando amostra\tPausar\nBNB/USDT\tTrap de Liquidez\t1h\t0.79\t1.39\t4amostra pequena\taguardando amostra\tPausar\nBNB/USDT\tCompressão de Volatilidade\t1h\t0.68\t10.53\t7amostra pequena\taguardando amostra\tPausar\nBNB/USDT\tCompressão de Volatilidade\t4h\t0.43\t—\t0\taguardando amostra\tPausar\nBNB/USDT\tCompressão de Volatilidade\t1d\t0.00\t—\t0\taguardando amostra\tPausar\nXRP/USDT\tRompimento de Range\t15m\t1.00\t3.60\t1amostra pequena\taguardando amostra\tPausar\nXRP/USDT\tRompimento de Range\t4h\t0.89\t—\t0\taguardando amostra\tPausar\nXRP/USDT\tRompimento de Range\t1h\t0.97\t—\t0\taguardando amostra\tPausar\nXRP/USDT\tCompressão de Volatilidade\t1h\t0.35\t2.08\t1amostra pequena\taguardando amostra\tPausar\nXRP/USDT\tTrap de Liquidez\t1h\t0.53\t4.87\t3amostra pequena\taguardando amostra\tPausar\nXRP/USDT\tCompressão de Volatilidade\t1d\t0.00\t—\t0\taguardando amostra\tPausar\nADA/USDT\tRompimento de Range\t15m\t1.40\t—\t0\taguardando amostra\tPausar\nXRP/USDT\tCompressão de Volatilidade\t4h\t0.32\t0.00\t1amostra ",
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [
+        {
+          "url": "http://127.0.0.1:3000/dashboard?_rsc=eciLULrnxj0yX8kl",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/estrategias?_rsc=eciLULrnxj0yX8kl",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/estatisticas?_rsc=eciLULrnxj0yX8kl",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/configuracoes?_rsc=eciLULrnxj0yX8kl",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/radar?_rsc=eciLULrnxj0yX8kl",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/estrategias?_rsc=kgNrckatLSUbZ_Os",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard?_rsc=kgNrckatLSUbZ_Os",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/backtest?_rsc=kgNrckatLSUbZ_Os",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/estatisticas?_rsc=kgNrckatLSUbZ_Os",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/radar?_rsc=kgNrckatLSUbZ_Os",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/configuracoes?_rsc=kgNrckatLSUbZ_Os",
+          "failure": "net::ERR_ABORTED"
+        }
+      ],
+      "screenshot": "reports/experiments/HYP-2026-0001/screenshots-auth/backtest.png"
+    },
+    {
+      "name": "configuracoes",
+      "url": "http://127.0.0.1:3000/dashboard/configuracoes",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3000/dashboard/configuracoes",
+      "title": "Robô Trade - Sinais de Crypto",
+      "bodyText": "Robô Trade\nBinance conectada\nDashboard\nEstratégias\nEstatísticas\nBacktest\nRadar\nConfigurações\nSair\nConfigurações\n\nPersonalize o comportamento do robô\n\nSalvar\nCalculadora de Posição\n\nSó informativo — o robô nunca executa nada sozinho. Preenche aqui pra ver o tamanho sugerido em cada sinal no Dashboard.\n\nCapital da conta (USDT)\n\nDeixe em branco pra desativar o cálculo.\n\nRisco por operação (%)\n\nPadrão de mercado: 0,25%–0,75% por operação.\n\nAlertas por Email\n\nConfigure o envio de alertas por email\n\nAtivar alertas por email\nEmail para receber alertas\nEstratégias que enviam alertas (novo sinal, alvo e stop)\nRompimento de Range\nPullback na EMA20\nTrap de Liquidez\nFunding Extremo\nReversão após Liquidação\nCompressão de Volatilidade\nAlertas por Telegram\n\nReceba os sinais direto no seu Telegram\n\nAtivar alertas por Telegram\nChat ID do Telegram\nBuscar\nTestar\nTestar sinal completo\n\nNão sabe seu Chat ID? Abra uma conversa com o seu bot no Telegram, mande qualquer mensagem (ex: \"oi\") e clique em \"Buscar\" aqui. \"Testar\" manda uma mensagem simples; \"Testar sinal completo\" simula um sinal de verdade — use esse se os sinais reais não estiverem chegando, ele passa pelo mesmo caminho de código do robô.\n\nEstratégias que enviam alertas (novo sinal, alvo e stop)\nRompimento de Range\nPullback na EMA20\nTrap de Liquidez\nFunding Extremo\nReversão após Liquidação\nCompressão de Volatilidade\nPares Monitorados\n\nSelecione os pares que deseja monitorar\n\nBTC/USDT\nETH/USDT\nSOL/USDT\nBNB/USDT\nXRP/USDT\nADA/USDT\nSUI/USDT\nAVAX/USDT\nLINK/USDT\nLTC/USDT\nTRX/USDT\nXLM/USDT\nUNI/USDT\nDOT/USDT\nBCH/USDT\nDOGE/USDT\n1000PEPE/USDT\nZEC/USDT\nHYPE/USDT\nWLD/USDT\nTAO/USDT\nEstratégia por Moeda\n\nRestrinja quais estratégias rodam em cada moeda (opcional)\n\nAplicar sugestão da pesquisa\n\nPor padrão, toda moeda monitorada roda todas as estratégias marcadas em \"Estratégias Ativas\" abaixo. Aqui você pode restringir moeda por moeda — por exemplo, só rodar \"Trap de Liquidez\" em BTC. Moedas sem nenhuma marcação nesta tabela continuam usando o padrão global. O botão \"Aplicar sugestão da pesquisa\" preenche com uma sugestão baseada em pesquisa de mercado trazida por você — é só um ponto de partida editável, vale testar no Backtest antes de confiar.\n\nMoeda\tRange\tPullback\tTrap\tFunding\tLiquidação\tSqueeze\t​\nBTC/USDT\t\n\t\t\t\n\t\t\t\n\nETH/USDT\t\n\t\t\t\n\t\t\t\n\nSOL/USDT\t\n\t\t\t\t\t\n\t\n\nBNB/USDT\t\n\t\t\n\t\t\t\n\t\n\nXRP/USDT\t\n\t\t\n\t\t\t\n\t\n\nADA/USDT\t\n\t\t\t\t\t\t\n\nSUI/USDT\t\n\t\t\t\t\t\t\n\nAVAX/USDT\t\n\t\t\t\t\t\t\n\nLINK/USDT\t\n\t\t\t\t\t\t\n\nLTC/USDT\t\t\t\n\t\t\t\t\n\nTRX/USDT\t\t\t\n\t\t\t\t\n\nXLM/USDT\t\t\t\n\t\t\t\n\t\n\nTAO/USDT\t\n\t\t\t\t\t\n\t\n\nWLD/USDT\t\n\t\t\t\n\t\t\t\n\nZEC/USDT\t\n\t\t\t\t\t\n\t\n\n1000PEPE/USDT\t\n\t\t\t\t\t\t\n\nBCH/USDT\t\n\t\t\n\t\n\t\n\t\n\t\n\nDOT/USDT\t\n\t\t\t\t\t\t\n\nUNI/USDT\t\n\t\t\t\t\t\n\t\nEstratégias Ativas\n\nAtive ou desative estratégias individualmente\n\nRompimento de Range\nPullback na EMA20\nTrap de Liquidez\nFunding Extremo\nReversão após Liquidação\nCompressão de Volatilidade\nHorário de Monitoramento\n\nConfigure o horário de operação para Day Trade\n\nInício\nFim",
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [
+        {
+          "url": "http://127.0.0.1:3000/dashboard?_rsc=eCfPhpk_QFlUK3MW",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/estrategias?_rsc=eCfPhpk_QFlUK3MW",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/backtest?_rsc=eCfPhpk_QFlUK3MW",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/radar?_rsc=eCfPhpk_QFlUK3MW",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard?_rsc=erwRfIqW8EK-v5yU",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/estrategias?_rsc=erwRfIqW8EK-v5yU",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/estatisticas?_rsc=erwRfIqW8EK-v5yU",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/backtest?_rsc=erwRfIqW8EK-v5yU",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/radar?_rsc=erwRfIqW8EK-v5yU",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/configuracoes?_rsc=erwRfIqW8EK-v5yU",
+          "failure": "net::ERR_ABORTED"
+        }
+      ],
+      "screenshot": "reports/experiments/HYP-2026-0001/screenshots-auth/configuracoes.png"
+    },
+    {
+      "name": "estatisticas",
+      "url": "http://127.0.0.1:3000/dashboard/estatisticas",
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3000/dashboard/estatisticas",
+      "title": "Robô Trade - Sinais de Crypto",
+      "bodyText": "Robô Trade\nBinance conectada\nDashboard\nEstratégias\nEstatísticas\nBacktest\nRadar\nConfigurações\nSair\nEstatísticas\n\nComparação detalhada do desempenho das estratégias\n\nHistórico completo\nRecalcular com dados reais\n\nEstes números são calculados apenas a partir de sinais reais gerados pelo robô e fechados com base no histórico real de preços da Binance (alvo 1 ou stop atingido) — nada aqui é simulado ou fixo.\n\nTotal de Trades\n\n207\n\nTotal Wins\n\n93\n\nTotal Losses\n\n114\n\nWin Rate Geral\n\n44.9%\n\nWin Rate por Estratégia\nRompimento de R...\nPullback na EMA...\nTrap de Liquide...\nFunding Extremo\nReversão após L...\nCompressão de V...\n0\n20\n40\n60\n80\nDistribuição de Trades\nTabela Comparativa\nEstratégia\tWin Rate\tPayoff\tFator Lucro\tDrawdown\tExpectativa\tTrades\tW/L\nRompimento de Range\t59.3%\t1.30x\t1.90\t40.1%\t+1.36\t54\t\n32\n22\n\nPullback na EMA20\t28.2%\t2.09x\t0.82\t23.8%\t-0.13\t78\t\n22\n56\n\nTrap de Liquidez\t48.4%\t1.06x\t0.99\t9.3%\t-0.01\t31\t\n15\n16\n\nFunding Extremo\tSem trades fechados ainda\nReversão após Liquidação\t66.7%\t1.03x\t2.07\t0.6%\t+0.23\t3amostra pequena\t\n2\n1\n\nCompressão de Volatilidade\t53.7%\t1.31x\t1.51\t22.3%\t+0.69\t41\t\n22\n19\nHistórico de Sinais Fechados\n\nResultado retroativo em $ se você tivesse operado cada um com o tamanho sugerido (capital de $1000.00, risco de 0.5% por operação) — não é o que você ganhou de verdade, é uma simulação.\n\nResultado total simulado (histórico completo)\n\n+$209.42\n\nData\tPar\tEstratégia\tStatus\tEntrada\tPnL %\tResultado $\n10/09/2026\tBCH/USDT\tCompressão de Volatilidade\tWIN\t$247.7400\t+2.80%\t+$7.60\n10/09/2026\tXLM/USDT\tCompressão de Volatilidade\tWIN\t$0.179620\t+2.47%\t+$7.80\n10/09/2026\tXRP/USDT\tCompressão de Volatilidade\tWIN\t$1.3809\t+2.08%\t+$9.79\n10/09/2026\tSOL/USDT\tCompressão de Volatilidade\tWIN\t$101.0800\t+2.12%\t+$7.91\n10/09/2026\tTAO/USDT\tCompressão de Volatilidade\tWIN\t$252.8000\t+3.96%\t+$7.50\n10/09/2026\tBNB/USDT\tCompressão de Volatilidade\tWIN\t$720.2900\t+1.71%\t+$9.56\n09/09/2026\tLTC/USDT\tTrap de Liquidez\tLOSS\t$53.1400\t-1.60%\t$-5.00\n09/09/2026\tBNB/USDT\tTrap de Liquidez\tLOSS\t$722.5600\t-1.05%\t$-5.00\n09/09/2026\tBCH/USDT\tRompimento de Range\tWIN\t$249.6900\t+8.32%\t+$7.50\n09/09/2026\tLTC/USDT\tTrap de Liquidez\tLOSS\t$54.4800\t-3.18%\t$-5.00\n09/09/2026\tTRX/USDT\tTrap de Liquidez\tWIN\t$0.338130\t+0.43%\t+$4.75\n09/09/2026\tBCH/USDT\tRompimento de Range\tWIN\t$254.9500\t+4.88%\t+$7.50\n09/09/2026\tBNB/USDT\tRompimento de Range\tWIN\t$744.0400\t+3.30%\t+$7.50\n09/09/2026\tBNB/USDT\tTrap de Liquidez\tLOSS\t$744.3400\t-0.86%\t$-5.00\n09/09/2026\tLTC/USDT\tTrap de Liquidez\tLOSS\t$53.7400\t-1.18%\t$-5.00\n09/09/2026\tUNI/USDT\tCompressão de Volatilidade\tWIN\t$6.6540\t+8.29%\t+$7.10\n09/09/2026\tBTC/USDT\tRompimento de Range\tLOSS\t$79,609.60\t-2.72%\t$-5.00\n09/09/2026\tDOT/USDT\tRompimento de Range\tWIN\t$1.1780\t+6.36%\t+$7.50\n09/09/2026\tETH/USDT\tRompimento de Range\tLOSS\t$2,512.02\t-3.16%\t$-5.00\n09/09/2026\tBTC/USDT\tRompimento de Range\tLOSS\t$79,174.00\t-2.19%\t$-5.00\n09/09/2026\tUNI/USDT\tCompressão de Volatilidade\tLOSS\t$6.8750\t-2.40%\t$-5.00\n09/09/2026\tTAO/USDT\tCompressão de Volatilidade\tWIN\t$258.0600\t+3.51%\t+$6.96\n09/09/2026\tZEC/USDT\tComp",
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [
+        {
+          "url": "http://127.0.0.1:3000/dashboard/estrategias?_rsc=zqpVhvGLRqMOp0DZ",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/estatisticas?_rsc=zqpVhvGLRqMOp0DZ",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/backtest?_rsc=zqpVhvGLRqMOp0DZ",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/radar?_rsc=zqpVhvGLRqMOp0DZ",
+          "failure": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3000/dashboard/configuracoes?_rsc=zqpVhvGLRqMOp0DZ",
+          "failure": "net::ERR_ABORTED"
+        }
+      ],
+      "screenshot": "reports/experiments/HYP-2026-0001/screenshots-auth/estatisticas.png"
+    }
+  ],
+  "issues": [
+    {
+      "page": "dashboard",
+      "severity": "HIGH",
+      "issue": "Visible runtime/error text",
+      "screenshot": "reports/experiments/HYP-2026-0001/screenshots-auth/dashboard.png"
+    },
+    {
+      "page": "estatisticas",
+      "severity": "HIGH",
+      "issue": "Visible runtime/error text",
+      "screenshot": "reports/experiments/HYP-2026-0001/screenshots-auth/estatisticas.png"
+    }
+  ]
+}
