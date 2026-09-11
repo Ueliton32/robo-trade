@@ -33,27 +33,38 @@ export { buildPairStrategyPlan, getGlobalPairStrategyPlan };
 
 // Estratégias que já validamos com o filtro de regime (via lib/radar-context-backtest.ts)
 // o suficiente pra rodar com esse filtro também ao vivo, não só em backtest.
-// Decisão de 09/09/2026 (Fase C — Shadow Evaluation):
-//   - Estratégia 1: RadarContextScan 08/09 — PF 0.96 → 1.46 (+0.50) em 1h,
-//     PF 0.95 → 0.80 (-0.15) em 15m. Decisão: filtrar em qualquer TF porque
-//     o filtro de regime para estratégia 1 funciona como filtro de contexto
-//     geral (só LATERALIZACAO), e em qualquer TF o backtest mostra evidência
-//     de que LATERALIZACAO é o regime onde ela performa melhor vs. não-filtrado.
-//     Ver lib/radar-context.ts: a estratégia 1 já está em LATERALIZACAO no mapa.
+// Decisão de 09/09/2026 (Fase C — Shadow Evaluation), REVISADA em 11/09/2026:
 //   - Estratégia 2: RadarContextScan 09/09 — PF 0.87 → 1.13 (+0.26) em 1h,
 //     PF 0.76 → 0.81 (+0.05) em 4h, PF 0.49 → 0.54 (+0.05) em 15m.
-//     Em todos os TFs, o filtro melhora ou mantém. Decisão: filtrar em qualquer TF.
-const REGIME_GATED_STRATEGIES_LIVE: number[] = [1, 2];
+//     Em todos os TFs, o filtro melhora ou mantém. Filtra em qualquer TF.
+//   - Estratégia 1: a decisão original de 09/09 ("filtrar em qualquer TF")
+//     usava só a MÉDIA de 6 pares (de ~19-21 operados ao vivo), escondendo
+//     que 15m piora na MAIORIA deles quando visto por par — ver
+//     scripts/radar-scan-strat1.ts / tabela RadarContextScan completa:
+//       15m: AVAX melhora (0.89→1.15), BNB/SOL neutros, mas BTC (0.85→0.64),
+//            ETH (0.91→0.51) e XRP (1.03→0.57) pioram — 3 de 6 pares piores,
+//            justamente no TF com 4x mais volume que o 1h nesses mesmos
+//            pares (1687 vs 416 trades sozinho).
+//       1h:  AVAX/BNB/ETH melhoram claramente (ex: BNB 0.74→1.43), 0 pares
+//            pioram (os outros 3 têm amostra filtrada pequena demais pra
+//            contar, não pioram).
+//       4h:  todos os 6 pares com menos de 10 trades sozinho — sem
+//            evidência nenhuma, não dá pra concluir nada.
+//     Revisado pra filtrar só em 1h (ver REGIME_GATED_STRATEGIES_BY_TF
+//     abaixo) — no 15m e 4h a estratégia 1 roda como sempre rodou, sem
+//     filtro de regime algum.
+const REGIME_GATED_STRATEGIES_LIVE: number[] = [2];
 
 // Estratégias com filtro de regime CONDICIONAL por timeframe.
 // Chave = strategyId, valor = lista de timeframes onde o filtro de regime
-// é aplicado. Estratégias fora deste mapa NUNCA passam pelo filtro.
-// NOTA: esta tabela foi DESATIVADA em 09/09/2026.
-// Motivo: estratégia 1 e 2 agora usam REGIME_GATED_STRATEGIES_LIVE (filtro
-// sempre aplicado a qualquer TF). As evidências de melhora_por_TF para
-// estratégia 1 foram inconsistentes entre 1h e 15m, e o gating por TF
-// adicionava complexidade sem benefício claro. Manter apenas a lista global.
-const REGIME_GATED_STRATEGIES_BY_TF: Record<number, string[]> = {};
+// é aplicado. Estratégias fora deste mapa (ou em REGIME_GATED_STRATEGIES_LIVE)
+// seguem essa outra regra; um strategyId nunca deveria estar nos dois ao
+// mesmo tempo (REGIME_GATED_STRATEGIES_LIVE tem prioridade — ver
+// passesLiveRegimeGate abaixo — então duplicar não causaria bug, só seria
+// redundante e confuso).
+const REGIME_GATED_STRATEGIES_BY_TF: Record<number, string[]> = {
+  1: ['1h'], // ver justificativa por par acima — só 1h tem evidência boa
+};
 
 /**
  * Pra estratégias na lista acima, só libera o sinal se o regime de
