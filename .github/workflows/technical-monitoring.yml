@@ -11,6 +11,17 @@ jobs:
   validate-update:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # `prisma validate` só checa que as variáveis referenciadas por env() no
+    # schema (DATABASE_URL/DIRECT_URL) EXISTEM — não que apontam pra um banco
+    # de verdade, já que esse comando não conecta em nada (ver
+    # https://www.prisma.io/docs/orm/reference/prisma-cli-reference#validate).
+    # `npm run build` também precisa delas presentes pro client do Prisma
+    # inicializar durante a análise estática das rotas, mesmo sem consultar
+    # nada de verdade nesta etapa. Valores fictícios de propósito — nunca
+    # apontam pro banco real, que fica só nos secrets do Vercel.
+    env:
+      DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci?schema=public"
+      DIRECT_URL: "postgresql://ci:ci@localhost:5432/ci?schema=public"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
