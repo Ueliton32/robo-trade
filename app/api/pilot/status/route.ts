@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { getRecentPilotEvents } from '@/lib/pilot-log';
 import { computeCorrelationExposure } from '@/lib/correlation-exposure';
+import { buildRobotStatusReport } from '@/lib/robot-status-report';
+import { listVersions } from '@/lib/config-promotion';
 
 const HEARTBEAT_STATE_KEY = 'last_cycle_heartbeat';
 const DIVERGENCE_CHECK_STATE_KEY = 'last_divergence_check';
@@ -25,7 +27,7 @@ export async function GET() {
 
     const intervalMinutes = Math.max(1, parseInt(process.env.SCHEDULER_INTERVAL_MINUTES ?? '15', 10) || 15);
 
-    const [heartbeat, lastDivergence, lastStability, lastDigest, failures, pausedCount, recentEvents, exposure] = await Promise.all([
+    const [heartbeat, lastDivergence, lastStability, lastDigest, failures, pausedCount, recentEvents, exposure, robotStatus, configVersions] = await Promise.all([
       prisma.systemState.findUnique({ where: { key: HEARTBEAT_STATE_KEY } }),
       prisma.systemState.findUnique({ where: { key: DIVERGENCE_CHECK_STATE_KEY } }),
       prisma.systemState.findUnique({ where: { key: STABILITY_SCAN_STATE_KEY } }),
@@ -34,6 +36,13 @@ export async function GET() {
       prisma.divergenceStreak.count({ where: { paused: true } }),
       getRecentPilotEvents(20),
       computeCorrelationExposure().catch(() => null),
+      // Fase 6-8 (ML/pesos/circuit breakers) — mesmo relatório já usado no
+      // resumo semanal (lib/weekly-digest.ts) e no CLI (scripts/report-status.ts),
+      // reaproveitado aqui pra não duplicar a lógica de agregação.
+      buildRobotStatusReport().catch(() => null),
+      // Últimas 5 versões de config deste usuário (Fase 10) — o que mudou
+      // por último e por quê, sem precisar rodar `npm run config:version -- --list`.
+      listVersions((session.user as any).id, 5).catch(() => []),
     ]);
 
     const minutesSinceHeartbeat = heartbeat ? (Date.now() - new Date(heartbeat.value).getTime()) / (1000 * 60) : null;
@@ -51,6 +60,8 @@ export async function GET() {
       pausedCombos: pausedCount,
       recentEvents,
       correlationExposure: exposure,
+      robotStatus,
+      configVersions,
     });
   } catch (error: any) {
     console.error('Pilot status error:', error);

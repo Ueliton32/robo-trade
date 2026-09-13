@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { Bot, RefreshCw, Zap, Clock, Activity, AlertTriangle, PauseCircle, CheckCircle2 } from 'lucide-react';
+import { Bot, RefreshCw, Zap, Clock, Activity, AlertTriangle, PauseCircle, CheckCircle2, ShieldAlert, Scale, Brain, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MarketCard } from '@/components/dashboard/market-card';
@@ -22,6 +22,7 @@ export default function DashboardPage() {
 
   const [pilotStatus, setPilotStatus] = useState<any>(null);
   const [showPilotLog, setShowPilotLog] = useState(false);
+  const [showRobotState, setShowRobotState] = useState(false);
 
   const fetchPilotStatus = useCallback(async () => {
     try {
@@ -206,6 +207,120 @@ export default function DashboardPage() {
                     <span className="text-muted-foreground truncate">{ev.message}</span>
                   </div>
                 ))
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Estado do robô — circuit breakers, pesos por estratégia, modelos ML, versão de config.
+          Antes só dava pra ver rodando `npm run report:status` ou os scripts
+          individuais no terminal; agora fica visível pra quem não abre o terminal. */}
+      {pilotStatus?.robotStatus && (
+        <div className="bg-card/50 border border-border/50 rounded-lg p-3">
+          <button
+            type="button"
+            onClick={() => setShowRobotState((v) => !v)}
+            className="w-full flex flex-wrap items-center justify-between gap-3 text-left"
+          >
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                {pilotStatus.robotStatus.breakersTrippedCount > 0 ? (
+                  <ShieldAlert className="w-4 h-4 text-red-400" />
+                ) : (
+                  <ShieldAlert className="w-4 h-4 text-emerald-400" />
+                )}
+                <span className="text-xs">
+                  {pilotStatus.robotStatus.breakersTrippedCount > 0
+                    ? `${pilotStatus.robotStatus.breakersTrippedCount} circuit breaker(s) disparado(s) — geração pausada`
+                    : 'Circuit breakers: todos OK'}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Scale className="w-3.5 h-3.5" />
+                {pilotStatus.robotStatus.weightsComputedAtLeastOnce
+                  ? `${pilotStatus.robotStatus.weights.filter((w: any) => !w.neutral).length} peso(s) ajustado(s)`
+                  : 'Pesos: nunca calculados'}
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Brain className="w-3.5 h-3.5" />
+                {pilotStatus.robotStatus.models.length} modelo(s) ML ativo(s) de {pilotStatus.robotStatus.totalStrategies}
+              </div>
+              {pilotStatus.configVersions?.[0] && (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <History className="w-3.5 h-3.5" /> config v{pilotStatus.configVersions[0].version}
+                </div>
+              )}
+            </div>
+            <span className="text-[10px] text-muted-foreground shrink-0">
+              {showRobotState ? 'Ocultar detalhes' : 'Ver detalhes'}
+            </span>
+          </button>
+
+          {showRobotState && (
+            <div className="mt-3 pt-3 border-t border-border/50 space-y-4">
+              <div>
+                <p className="text-xs font-medium mb-1.5">Circuit breakers de risco</p>
+                <div className="space-y-1">
+                  {pilotStatus.robotStatus.breakers.map((b: any) => (
+                    <div key={b.key} className="text-xs flex items-start gap-2">
+                      {b.tripped ? (
+                        <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+                      ) : (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                      )}
+                      <span>
+                        <span className="font-mono text-[11px]">{b.key}</span>
+                        {b.tripped ? (
+                          <span className="text-red-400"> — disparado {timeAgo(b.trippedAt)}: {b.reason}</span>
+                        ) : (
+                          <span className="text-muted-foreground"> — OK</span>
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium mb-1.5">Pesos por estratégia</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                  {pilotStatus.robotStatus.weights.map((w: any) => (
+                    <div key={w.strategyId} className="text-xs text-muted-foreground flex justify-between">
+                      <span>#{w.strategyId} {w.strategyName}</span>
+                      <span className="font-mono">{w.weight.toFixed(2)}{w.neutral ? ' (neutro)' : ''}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium mb-1.5">Modelos ML ativos</p>
+                {pilotStatus.robotStatus.models.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Nenhum modelo ativo — nenhum já treinado superou o baseline (~aleatório) o suficiente pra ser ativado.</p>
+                ) : (
+                  <div className="space-y-1">
+                    {pilotStatus.robotStatus.models.map((m: any) => (
+                      <div key={m.strategyId} className="text-xs text-muted-foreground">
+                        #{m.strategyId} {m.strategyName} — v{m.version}, AUC={m.testAUC?.toFixed(3) ?? 'n/d'}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {pilotStatus.configVersions?.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium mb-1.5">Últimas mudanças de configuração</p>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                    {pilotStatus.configVersions.map((v: any) => (
+                      <div key={v.id} className="text-xs flex gap-2">
+                        <span className="text-muted-foreground shrink-0">v{v.version}</span>
+                        <span className="text-muted-foreground truncate">{v.reason}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           )}
