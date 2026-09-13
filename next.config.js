@@ -5,9 +5,6 @@ const nextConfig = {
   output: process.env.NEXT_OUTPUT_MODE || undefined,
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: false,
   },

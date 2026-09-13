@@ -5,7 +5,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx --require dotenv/config scripts/safe-seed.ts",
@@ -20,7 +20,18 @@
     "ml:model": "tsx --require dotenv/config scripts/ml-model.ts",
     "config:version": "tsx --require dotenv/config scripts/config-version.ts",
     "report:status": "tsx --require dotenv/config scripts/report-status.ts",
-    "test:weekly-digest": "tsx --require dotenv/config scripts/test-weekly-digest.ts"
+    "test": "node --import tsx --test tests/*.test.ts",
+    "test:eligibility": "node --import tsx --test tests/strategy-eligibility*.test.ts",
+    "test:monitoring": "node --import tsx --test tests/monitoring*.test.ts",
+    "test:weekly-digest": "tsx --require dotenv/config scripts/test-weekly-digest.ts",
+    "monitoring:daily": "tsx --require dotenv/config scripts/monitoring-daily.ts",
+    "monitoring:update": "tsx --require dotenv/config scripts/monitoring-update.ts",
+    "monitoring:weekly": "tsx --require dotenv/config scripts/monitoring-weekly.ts",
+    "monitoring:monthly": "tsx --require dotenv/config scripts/monitoring-monthly.ts",
+    "monitoring:incident": "tsx --require dotenv/config scripts/monitoring-incident-summary.ts",
+    "monitoring:productivity-baseline": "tsx --require dotenv/config scripts/monitoring-productivity-baseline.ts",
+    "improvement:backlog": "tsx --require dotenv/config scripts/improvement-backlog.ts",
+    "validate:update": "tsx --require dotenv/config scripts/monitoring-update.ts"
   },
   "prisma": {
     "seed": "tsx --require dotenv/config scripts/safe-seed.ts"

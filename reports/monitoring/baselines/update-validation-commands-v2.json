@@ -1,0 +1,26 @@
+[
+  {
+    "command": "npm run test",
+    "ok": true
+  },
+  {
+    "command": "npx tsc --noEmit",
+    "ok": true
+  },
+  {
+    "command": "npm run lint",
+    "ok": true
+  },
+  {
+    "command": "npx prisma validate",
+    "ok": true
+  },
+  {
+    "command": "npm audit --audit-level=high",
+    "ok": false
+  },
+  {
+    "command": "npm run build",
+    "ok": true
+  }
+]

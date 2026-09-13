@@ -1,0 +1,68 @@
+{
+  "drift": {
+    "confidencePsi": 0,
+    "mlProbabilityPsi": 0,
+    "atrRatioPsi": 0,
+    "volumeRatioPsi": 0,
+    "spreadPsi": 0
+  },
+  "regime": {
+    "UNKNOWN": 183,
+    "ALTA": 13,
+    "BAIXA_CORRECAO": 3,
+    "ALTA_CORRECAO": 14,
+    "ALTA_VOLATILIDADE_SEM_DIRECAO": 2,
+    "LATERALIZACAO": 3
+  },
+  "metrics": {
+    "totalTrades": 176,
+    "sufficientSample": true,
+    "winRate": 45.45454545454545,
+    "grossProfitPercent": 256.56902421692286,
+    "grossLossPercent": 135.37430464045696,
+    "netPnlPercent": 103.60216957646588,
+    "netPnlEstimatedCount": 137,
+    "profitFactorGross": 1.8952564513505656,
+    "profitFactorNet": 1.7146557111878444,
+    "expectancyGross": 0.6886063612299204,
+    "expectancyNet": 0.5886486907753743,
+    "payoffGross": 2.274307741620679,
+    "payoffNet": 2.057586853425413,
+    "avgWinGross": 3.207112802711536,
+    "avgLossGross": 1.4101490066714266,
+    "maxWinStreak": 12,
+    "maxLossStreak": 8,
+    "maxDrawdownGross": 28.5416014223932,
+    "maxDrawdownNet": 30.871152665085546,
+    "avgRMultipleNet": 0.11657293885247264,
+    "rMultipleSampleSize": 176,
+    "sharpeNet": {
+      "value": 0.19556534692706612,
+      "sampleSize": 176,
+      "sufficientSample": true
+    },
+    "sortinoNet": {
+      "value": 0.5269468129579398,
+      "sampleSize": 96,
+      "sufficientSample": true
+    }
+  },
+  "costSamples": {
+    "feesPercent": {
+      "count": 39,
+      "avg": 0.10000000000000006
+    },
+    "slippagePercent": {
+      "count": 39,
+      "avg": 0
+    },
+    "fundingCostPercent": {
+      "count": 39,
+      "avg": -0.000191025641025641
+    },
+    "pnlNetPercent": {
+      "count": 39,
+      "avg": 1.3229588709966071
+    }
+  }
+}

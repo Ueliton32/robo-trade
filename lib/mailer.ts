@@ -1,8 +1,8 @@
-import nodemailer from 'nodemailer';
+import nodemailer, { type Transporter } from 'nodemailer';
 
-let transporter: nodemailer.Transporter | null | undefined;
+let transporter: Transporter | null | undefined;
 
-function getTransporter(): nodemailer.Transporter | null {
+function getTransporter(): Transporter | null {
   if (transporter !== undefined) return transporter;
 
   const host = process.env.SMTP_HOST;
