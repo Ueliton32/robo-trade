@@ -50,9 +50,20 @@ export { buildPairStrategyPlan, getGlobalPairStrategyPlan };
 //            contar, não pioram).
 //       4h:  todos os 6 pares com menos de 10 trades sozinho — sem
 //            evidência nenhuma, não dá pra concluir nada.
-//     Revisado pra filtrar só em 1h (ver REGIME_GATED_STRATEGIES_BY_TF
-//     abaixo) — no 15m e 4h a estratégia 1 roda como sempre rodou, sem
-//     filtro de regime algum.
+//     Revisado em 11/09 pra filtrar só em 1h — no 15m e 4h a estratégia 1
+//     continuava rodando sem filtro de regime algum.
+//
+//     REVISADO DE NOVO em 16/09/2026: o filtro em 1h provou funcionar na
+//     prática — zero sinais de estratégia 1 em 1h desde que foi pro ar
+//     (13/09), porque o mercado ficou em regime BAIXA (queda forte,
+//     força 1.00) o tempo todo, exatamente o regime ruim pra essa
+//     estratégia. Mas o 15m, ainda sem filtro, sangrou nesse mesmo
+//     período: 15 sinais fechados, 0 WIN, PnL líquido -38,08% (WR 0%),
+//     no mesmo regime BAIXA que o 1h já bloqueia. Evidência em tempo
+//     real bate com o backtest de 09/09 (15m pior que 1h) — estendido
+//     pra 15m também (ver REGIME_GATED_STRATEGIES_BY_TF abaixo). 4h
+//     continua sem filtro — ainda sem evidência (amostra insuficiente
+//     nos dois levantamentos).
 const REGIME_GATED_STRATEGIES_LIVE: number[] = [2];
 
 // Estratégias com filtro de regime CONDICIONAL por timeframe.
@@ -63,7 +74,7 @@ const REGIME_GATED_STRATEGIES_LIVE: number[] = [2];
 // passesLiveRegimeGate abaixo — então duplicar não causaria bug, só seria
 // redundante e confuso).
 const REGIME_GATED_STRATEGIES_BY_TF: Record<number, string[]> = {
-  1: ['1h'], // ver justificativa por par acima — só 1h tem evidência boa
+  1: ['1h', '15m'], // ver justificativa por par/tempo real acima
 };
 
 /**
