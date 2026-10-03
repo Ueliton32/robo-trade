@@ -106,6 +106,26 @@ async function passesLiveRegimeGate(strategyId: number, pair: string, timeframe:
   }
 }
 
+// Direções bloqueadas por estratégia (strategyId → direções que NÃO geram sinal).
+// Estratégia 1 (Rompimento de Range), bloqueio de SHORT — decisão de 03/10/2026,
+// scripts/audit-strategy-direction.ts (15 pares × 15m/1h/4h, 6 meses, como roda
+// ao vivo, 852 trades): SHORT PF 0.64 (soma -246.4%) contra LONG PF 1.10
+// (+56.9%). Ao vivo (~1 mês) o mesmo padrão: SHORT n=77 PF 0.50 (-91.4%),
+// LONG n=46 PF 2.25 (+78.2%) — SHORT perde nos 3 timeframes nas duas amostras
+// (no 4h: backtest PF 0.26; ao vivo, os 4 sinais de 4h eram todos SHORT, 0 WIN)
+// e em 12 dos 15 pares. O 15m LONG tem sinal conflitante (backtest PF 0.77,
+// ao vivo PF 2.91 com só n=13) — não mexido, revisitar com mais dado ao vivo.
+const DIRECTION_BLOCKED_STRATEGIES_LIVE: Record<number, Array<'LONG' | 'SHORT'>> = {
+  1: ['SHORT'],
+};
+
+// Mesma regra do filtro de regime: SHADOW gera sem filtro (pra comparação),
+// PAPER_TRADING e LIVE aplicam.
+function passesLiveDirectionGate(strategyId: number, direction: string, executionMode: ExecutionMode = 'PAPER_TRADING'): boolean {
+  if (executionMode === 'SHADOW') return true;
+  return !DIRECTION_BLOCKED_STRATEGIES_LIVE[strategyId]?.includes(direction as 'LONG' | 'SHORT');
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // Contexto no momento do sinal (Fase 2 — registro completo, 04/09/2026).
 // Tudo aqui é best-effort: se uma chamada externa falhar, o sinal ainda é
@@ -348,7 +368,7 @@ export async function generateSignals(plan: PairStrategyPlan): Promise<EnrichedS
         } else {
           signal = await (strat.analyze as any)(pair, tf);
         }
-        if (signal && (await passesLiveRegimeGate(strategyId, pair, tf, executionMode))) {
+        if (signal && passesLiveDirectionGate(strategyId, signal.direction, executionMode) && (await passesLiveRegimeGate(strategyId, pair, tf, executionMode))) {
           signal.leverage = clampLeverageString(signal.leverage); // Fase 8 — só pode reduzir, nunca aumentar
           const enriched = await enrichSignal(signal, enrichmentCaches);
           enriched.weightAtSignal = strategyWeights.get(strategyId) ?? 1.0; // Fase 7 — informativo, não muda leverage/stop/alvo
