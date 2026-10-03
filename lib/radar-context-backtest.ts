@@ -32,6 +32,8 @@ export interface RadarContextResult {
   totalSignalsDetected: number;
   totalAcceptedByRegime: number;
   acceptedTrades: ContextTrade[];
+  /** Todos os trades simulados (com regime e direção), pra cortes além do filtro padrão. */
+  allTrades: ContextTrade[];
   filteredMetrics: ComputedMetrics;
   unfilteredMetrics: ComputedMetrics;
   periodStart: Date;
@@ -149,6 +151,7 @@ export async function backtestRegimeFilteredStrategy(params: {
     totalSignalsDetected: totalDetected,
     totalAcceptedByRegime: acceptedTrades.length,
     acceptedTrades,
+    allTrades,
     filteredMetrics: computeMetrics(toTradeLikes(acceptedTrades)),
     unfilteredMetrics: computeMetrics(toTradeLikes(allTrades)),
     periodStart: new Date(periodStart),
