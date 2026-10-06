@@ -24,6 +24,7 @@ import { runWeeklyDigestIfDue } from './weekly-digest';
 import { logPilotEvent } from './pilot-log';
 import { checkCorrelationExposure } from './correlation-exposure';
 import { recordReliabilitySnapshotIfDue } from './reliability-score';
+import { updateTrendPaperIfDue } from './trend-paper';
 import { notifyOps } from './ops-notify';
 import { HEARTBEAT_STATE_KEY, CONSECUTIVE_FAILURES_STATE_KEY } from './system-state-keys';
 
@@ -149,6 +150,16 @@ export async function runSignalCycle(intervalMinutes: number = 15): Promise<Cycl
     const reliabilitySnapshot = await recordReliabilitySnapshotIfDue();
     if (reliabilitySnapshot.ran && reliabilitySnapshot.result) {
       lines.push(`Índice de confiabilidade: ${reliabilitySnapshot.result.total}/100.`);
+    }
+
+    // Tendência diária em paper (protótipo de 06/10/2026, ver lib/trend-paper.ts).
+    // Isolada de propósito: uma falha aqui nunca derruba o ciclo de sinais.
+    // Só faz rede 1x por dia UTC; nos outros ciclos é uma leitura no banco.
+    try {
+      const trend = await updateTrendPaperIfDue();
+      if (trend.added && trend.latest) lines.push(`Tendência diária (paper): ${trend.added} dia(s) registrado(s), capital ${trend.latest.equity.toFixed(4)}.`);
+    } catch (e: any) {
+      lines.push(`Tendência diária (paper) falhou, ignorando: ${e?.message ?? e}`);
     }
 
     ok = true;

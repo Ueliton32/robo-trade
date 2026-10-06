@@ -7,6 +7,7 @@ import { getRecentPilotEvents } from '@/lib/pilot-log';
 import { computeCorrelationExposure } from '@/lib/correlation-exposure';
 import { buildRobotStatusReport } from '@/lib/robot-status-report';
 import { listVersions } from '@/lib/config-promotion';
+import { getTrendPaperStatus } from '@/lib/trend-paper';
 
 const HEARTBEAT_STATE_KEY = 'last_cycle_heartbeat';
 const DIVERGENCE_CHECK_STATE_KEY = 'last_divergence_check';
@@ -27,7 +28,7 @@ export async function GET() {
 
     const intervalMinutes = Math.max(1, parseInt(process.env.SCHEDULER_INTERVAL_MINUTES ?? '15', 10) || 15);
 
-    const [heartbeat, lastDivergence, lastStability, lastDigest, failures, pausedCount, recentEvents, exposure, robotStatus, configVersions] = await Promise.all([
+    const [heartbeat, lastDivergence, lastStability, lastDigest, failures, pausedCount, recentEvents, exposure, robotStatus, configVersions, trendPaper] = await Promise.all([
       prisma.systemState.findUnique({ where: { key: HEARTBEAT_STATE_KEY } }),
       prisma.systemState.findUnique({ where: { key: DIVERGENCE_CHECK_STATE_KEY } }),
       prisma.systemState.findUnique({ where: { key: STABILITY_SCAN_STATE_KEY } }),
@@ -43,6 +44,8 @@ export async function GET() {
       // Últimas 5 versões de config deste usuário (Fase 10) — o que mudou
       // por último e por quê, sem precisar rodar `npm run config:version -- --list`.
       listVersions((session.user as any).id, 5).catch(() => []),
+      // Tendência diária em paper (lib/trend-paper.ts) — só lê o livro-caixa, sem rede.
+      getTrendPaperStatus().catch(() => null),
     ]);
 
     const minutesSinceHeartbeat = heartbeat ? (Date.now() - new Date(heartbeat.value).getTime()) / (1000 * 60) : null;
@@ -62,6 +65,7 @@ export async function GET() {
       correlationExposure: exposure,
       robotStatus,
       configVersions,
+      trendPaper,
     });
   } catch (error: any) {
     console.error('Pilot status error:', error);

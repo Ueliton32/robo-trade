@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { Bot, RefreshCw, Zap, Clock, Activity, AlertTriangle, PauseCircle, CheckCircle2, ShieldAlert, Scale, Brain, History } from 'lucide-react';
+import { Bot, RefreshCw, Zap, Clock, Activity, AlertTriangle, PauseCircle, CheckCircle2, ShieldAlert, Scale, Brain, History, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MarketCard } from '@/components/dashboard/market-card';
@@ -23,6 +23,7 @@ export default function DashboardPage() {
   const [pilotStatus, setPilotStatus] = useState<any>(null);
   const [showPilotLog, setShowPilotLog] = useState(false);
   const [showRobotState, setShowRobotState] = useState(false);
+  const [showTrend, setShowTrend] = useState(false);
 
   const fetchPilotStatus = useCallback(async () => {
     try {
@@ -323,6 +324,68 @@ export default function DashboardPage() {
                 </div>
               )}
             </div>
+          )}
+        </div>
+      )}
+
+      {/* Tendência diária em paper (lib/trend-paper.ts) — protótipo separado das
+          estratégias de sinal: não gera Signal, é avaliado pela curva de capital. */}
+      {pilotStatus && (
+        <div className="bg-card/50 border border-border/50 rounded-lg p-3">
+          {!pilotStatus.trendPaper ? (
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <TrendingUp className="w-3.5 h-3.5" /> Tendência diária (paper): aguardando o primeiro registro (roda 1x por dia, após 00:05 UTC).
+            </p>
+          ) : (
+            <>
+              <button type="button" onClick={() => setShowTrend((v) => !v)} className="w-full flex flex-wrap items-center justify-between gap-3 text-left">
+                <div className="flex flex-wrap items-center gap-4 text-xs">
+                  <span className="flex items-center gap-1.5"><TrendingUp className="w-4 h-4 text-emerald-400" /> Tendência diária (paper) — dia {pilotStatus.trendPaper.days}</span>
+                  <span className={pilotStatus.trendPaper.returnPct >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                    capital {pilotStatus.trendPaper.returnPct >= 0 ? '+' : ''}{pilotStatus.trendPaper.returnPct.toFixed(1)}%
+                  </span>
+                  <span className="text-muted-foreground">BTC {pilotStatus.trendPaper.btcReturnPct >= 0 ? '+' : ''}{pilotStatus.trendPaper.btcReturnPct.toFixed(1)}%</span>
+                  <span className="text-muted-foreground">queda máx. {pilotStatus.trendPaper.maxDrawdownPct.toFixed(1)}%</span>
+                  <span className="text-muted-foreground">exposição {pilotStatus.trendPaper.exposurePct.toFixed(0)}%</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground shrink-0">{showTrend ? 'Ocultar detalhes' : 'Ver detalhes'}</span>
+              </button>
+              {showTrend && (
+                <div className="mt-3 pt-3 border-t border-border/50 space-y-3">
+                  {pilotStatus.trendPaper.curve.length > 1 && (() => {
+                    const c = pilotStatus.trendPaper.curve as { e: number; b: number }[];
+                    const all = c.flatMap((p) => [p.e, p.b]);
+                    const min = Math.min(...all), max = Math.max(...all), span = max - min || 1;
+                    const pts = (k: 'e' | 'b') => c.map((p, i) => `${(i / (c.length - 1)) * 300},${58 - ((p[k] - min) / span) * 54}`).join(' ');
+                    return (
+                      <div>
+                        <svg viewBox="0 0 300 60" className="w-full h-16" preserveAspectRatio="none">
+                          <polyline points={pts('b')} fill="none" stroke="currentColor" strokeWidth="1" className="text-muted-foreground" />
+                          <polyline points={pts('e')} fill="none" stroke="currentColor" strokeWidth="1.5" className="text-emerald-400" />
+                        </svg>
+                        <p className="text-[10px] text-muted-foreground">Capital da tendência (verde) vs BTC comprado e mantido (cinza), desde {pilotStatus.trendPaper.startDate}.</p>
+                      </div>
+                    );
+                  })()}
+                  <div>
+                    <p className="text-xs font-medium mb-1.5">Posições atuais (decididas no fechamento de {pilotStatus.trendPaper.lastDate})</p>
+                    {pilotStatus.trendPaper.positions.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">Tudo em caixa.</p>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-1">
+                        {pilotStatus.trendPaper.positions.map((p: any) => (
+                          <div key={p.pair} className="text-xs text-muted-foreground flex justify-between">
+                            <span>{p.pair.replace('USDT', '')} <span className="text-[10px]">sinal {p.signal.toFixed(2)}</span></span>
+                            <span className="font-mono">{p.weightPct.toFixed(1)}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Teste à frente de uma regra fixa (ensemble Donchian diário, long-only, vol-alvo). Não gera sinal nem ordem. Ver lib/trend-paper.ts.</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
