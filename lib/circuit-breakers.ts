@@ -184,22 +184,37 @@ async function checkMaxDrawdown(): Promise<BreakerCheck> {
  * não evita que histórico de um par/estratégia já desativado ocupe vagas
  * na contagem das N últimas perdas até um WIN de verdade "empurrar" ele
  * pra fora da janela — o que pode levar dias. Corrigido com o mesmo
- * filtro dos outros três breakers. Busca um lote maior que o limite (3x)
- * pra sobrar sinal suficiente depois de excluir combinação desativada.
+ * filtro dos outros três breakers.
+ *
+ * Segunda correção, 06/10/2026: a versão de 08/09 buscava um lote fixo (3x o
+ * limite) e SÓ DEPOIS filtrava combinações inativas — quando o histórico
+ * recente era dominado por uma estratégia desativada (ex: 28/09, #3), sobravam
+ * poucas linhas ativas e a sequência era SUBCONTADA (9 em vez de 11), então o
+ * breaker podia deixar de disparar. Agora varre em lotes, já filtrando, até a
+ * primeira vitória ativa (ou até o teto de segurança). Ordenação por
+ * closedAt + id pra paginação determinística em fechamentos no mesmo candle.
  */
-async function checkLossStreak(): Promise<BreakerCheck> {
-  const recent = await prisma.signal.findMany({
-    where: { source: 'live', status: { in: ['WIN', 'LOSS'] } },
-    orderBy: { closedAt: 'desc' },
-    take: (RISK_MAX_CONSECUTIVE_LOSSES + 5) * 3,
-    select: { status: true, pair: true, strategyId: true },
-  });
+const LOSS_STREAK_BATCH = 100;
+const LOSS_STREAK_MAX_ROWS = 2000; // teto de segurança contra varrer o histórico inteiro
+
+export async function checkLossStreak(batchSize: number = LOSS_STREAK_BATCH): Promise<BreakerCheck> {
   const plan = await getGlobalPairStrategyPlan();
-  const active = recent.filter((s) => isComboActive(plan, s.pair, s.strategyId));
   let streak = 0;
-  for (const s of active) {
-    if (s.status === 'LOSS') streak++;
-    else break;
+  let ended = false;
+  for (let skip = 0; !ended && skip < LOSS_STREAK_MAX_ROWS; skip += batchSize) {
+    const batch = await prisma.signal.findMany({
+      where: { source: 'live', status: { in: ['WIN', 'LOSS'] } },
+      orderBy: [{ closedAt: 'desc' }, { id: 'asc' }],
+      skip,
+      take: batchSize,
+      select: { status: true, pair: true, strategyId: true },
+    });
+    if (!batch.length) break;
+    for (const s of batch) {
+      if (!isComboActive(plan, s.pair, s.strategyId)) continue;
+      if (s.status === 'LOSS') streak++;
+      else { ended = true; break; }
+    }
   }
   const threshold = RISK_MAX_CONSECUTIVE_LOSSES;
   return {
