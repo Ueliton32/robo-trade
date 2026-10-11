@@ -1,6 +1,7 @@
 /**
  * Checagem do checkLossStreak (lib/circuit-breakers.ts): o resultado tem que
- * ser IGUAL à contagem sem janela nenhuma (varre todo o histórico), com lote
+ * ser IGUAL à contagem sem janela nenhuma (varre todo o histórico, já descartando
+ * combinações inativas E direções bloqueadas — isComboActive com direção), com lote
  * grande e com lote minúsculo (força a paginação em vários lotes). Falha
  * (exit 1) se divergir. Só leitura.
  *
@@ -15,11 +16,11 @@ async function main() {
   const all = await prisma.signal.findMany({
     where: { source: 'live', status: { in: ['WIN', 'LOSS'] } },
     orderBy: [{ closedAt: 'desc' }, { id: 'asc' }],
-    select: { status: true, pair: true, strategyId: true },
+    select: { status: true, pair: true, strategyId: true, direction: true },
   });
   const plan = await getGlobalPairStrategyPlan();
   let expected = 0;
-  for (const s of all.filter((x) => isComboActive(plan, x.pair, x.strategyId))) { if (s.status === 'LOSS') expected++; else break; }
+  for (const s of all.filter((x) => isComboActive(plan, x.pair, x.strategyId, x.direction))) { if (s.status === 'LOSS') expected++; else break; }
   console.log(`Sem janela (${all.length} fechados): sequência ativa = ${expected}`);
 
   for (const batch of [100, 7, 1]) {

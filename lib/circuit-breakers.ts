@@ -102,7 +102,9 @@ function sumNetPnl(trades: EvaluationTrade[]): number {
  * Correção (aplicada a max_drawdown, daily_loss e weekly_loss): o cálculo
  * só considera sinais de combinações (par + estratégia) que ainda estão
  * ATIVAS na configuração de hoje (união de todos os usuários, igual ao que
- * generateSignals() realmente roda — ver lib/pair-strategy-plan.ts).
+ * generateSignals() realmente roda — ver lib/pair-strategy-plan.ts). Desde
+ * 11/10/2026 "ativa" também exclui a DIREÇÃO bloqueada pelo gate de direção
+ * (ex: SHORT da #1) — ver isComboActive.
  * Histórico de uma combinação desativada não desaparece do banco nem das
  * quebras de scripts/evaluate.ts, só para de contar pra estas proteções
  * especificamente — o raciocínio é que uma causa já removida da
@@ -126,7 +128,7 @@ function sumNetPnl(trades: EvaluationTrade[]): number {
  */
 async function filterTradesToActiveCombos(trades: EvaluationTrade[]): Promise<EvaluationTrade[]> {
   const plan = await getGlobalPairStrategyPlan();
-  return trades.filter((t) => isComboActive(plan, t.pair, t.strategyId));
+  return trades.filter((t) => isComboActive(plan, t.pair, t.strategyId, t.direction));
 }
 
 async function checkDailyLoss(): Promise<BreakerCheck> {
@@ -207,11 +209,11 @@ export async function checkLossStreak(batchSize: number = LOSS_STREAK_BATCH): Pr
       orderBy: [{ closedAt: 'desc' }, { id: 'asc' }],
       skip,
       take: batchSize,
-      select: { status: true, pair: true, strategyId: true },
+      select: { status: true, pair: true, strategyId: true, direction: true },
     });
     if (!batch.length) break;
     for (const s of batch) {
-      if (!isComboActive(plan, s.pair, s.strategyId)) continue;
+      if (!isComboActive(plan, s.pair, s.strategyId, s.direction)) continue;
       if (s.status === 'LOSS') streak++;
       else { ended = true; break; }
     }

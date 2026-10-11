@@ -107,15 +107,42 @@ export async function getGlobalPairStrategyPlan(): Promise<PairStrategyPlan> {
 }
 
 /**
- * Usado por checkMaxDrawdown (lib/circuit-breakers.ts) pra excluir do
- * cálculo de drawdown sinais de combinações (par+estratégia) que já não
- * rodam mais na configuração ATUAL — ex: uma estratégia removida de todos
- * os pares continua no histórico dos últimos 90 dias, mas não devia
- * continuar travando a geração de sinal novo por uma causa já corrigida.
+ * Usado pelos circuit breakers (lib/circuit-breakers.ts) pra excluir do
+ * cálculo sinais de combinações (par+estratégia) que já não rodam mais na
+ * configuração ATUAL — ex: uma estratégia removida de todos os pares continua
+ * no histórico dos últimos 90 dias, mas não devia continuar travando a geração
+ * de sinal novo por uma causa já corrigida.
  * "Ativa" aqui = existe em pelo menos um timeframe do plano global (união
  * de todos os usuários), igual ao que generateSignals() realmente roda.
+ *
+ * Com `direction`, também exclui a direção bloqueada pelo gate de direção
+ * (DIRECTION_BLOCKED_STRATEGIES_LIVE) — mesma lógica, terceira instância do
+ * mesmo problema (11/10/2026): 6 SHORTs antigos da #1, direção que o robô já
+ * não gera mais, seguravam o loss_streak em 10 e impediam o reset (o breaker
+ * dispara de novo no ciclo seguinte e, parado, o robô nunca teria uma
+ * vitória nova pra quebrar a sequência). Chamadas sem `direction` mantêm o
+ * comportamento anterior.
  */
-export function isComboActive(plan: PairStrategyPlan, pair: string, strategyId: number): boolean {
+export function isComboActive(plan: PairStrategyPlan, pair: string, strategyId: number, direction?: string): boolean {
+  if (direction !== undefined && isDirectionBlocked(strategyId, direction)) return false;
   const timeframes = plan[pair]?.[strategyId];
   return !!timeframes && timeframes.length > 0;
+}
+
+// Direções bloqueadas por estratégia (strategyId → direções que NÃO geram sinal).
+// Estratégia 1 (Rompimento de Range), bloqueio de SHORT — decisão de 03/10/2026,
+// scripts/audit-strategy-direction.ts (15 pares × 15m/1h/4h, 6 meses, como roda
+// ao vivo, 852 trades): SHORT PF 0.64 (soma -246.4%) contra LONG PF 1.10
+// (+56.9%). Ao vivo (~1 mês) o mesmo padrão: SHORT n=77 PF 0.50 (-91.4%),
+// LONG n=46 PF 2.25 (+78.2%) — SHORT perde nos 3 timeframes nas duas amostras
+// (no 4h: backtest PF 0.26; ao vivo, os 4 sinais de 4h eram todos SHORT, 0 WIN)
+// e em 12 dos 15 pares. O 15m LONG tem sinal conflitante (backtest PF 0.77,
+// ao vivo PF 2.91 com só n=13) — não mexido, revisitar com mais dado ao vivo.
+// Aplicado em lib/analysis-engine.ts (geração) e nos breakers (contagem).
+export const DIRECTION_BLOCKED_STRATEGIES_LIVE: Record<number, Array<'LONG' | 'SHORT'>> = {
+  1: ['SHORT'],
+};
+
+export function isDirectionBlocked(strategyId: number, direction: string): boolean {
+  return !!DIRECTION_BLOCKED_STRATEGIES_LIVE[strategyId]?.includes(direction as 'LONG' | 'SHORT');
 }
