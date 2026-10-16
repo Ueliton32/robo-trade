@@ -50,5 +50,14 @@ reports/monitoring/baselines/*.json
 !reports/monitoring/baselines/monthly-drift-summary.json
 !reports/monitoring/baselines/update-validation-commands-v2.json
 
+# ── Hermes Quant Lab / LP Portfolio Monitor generated artefacts ─────
+lib/monitoring/lp/**/*.db
+lib/monitoring/lp/**/*.db-journal
+lib/monitoring/lp/**/report*.json
+lib/monitoring/lp/**/report*.md
+lib/monitoring/lp/**/fixture.json
+tmp/
+*.backup
+
 .vercel
 .env*
