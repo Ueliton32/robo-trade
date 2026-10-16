@@ -468,3 +468,29 @@ model ReliabilitySnapshot {
 
   @@index([createdAt])
 }
+
+// Experiment registry for Quant Lab — tracks hypotheses, code, data, results
+// Append-only, versioned, auditável
+model Experiment {
+  id            String   @id @default(cuid())
+  name          String   // short descriptive name
+  hypothesis    String   @db.Text  // testável, falsificável
+  agent         String   // market-research | strategy-builder | quant-optimizer | ml-researcher
+  config        Json     // hyperparameters, feature list, data splits
+  code_version  String   // git commit hash
+  data_version  String   // hash do dataset (train/val/test)
+  status        String   @default("PENDING") // PENDING | RUNNING | COMPLETED | FAILED | ARCHIVED
+  metrics       Json?    // {sharpe, sortino, max_dd, pf, expectancy, oos_sharpe, ...}
+  artifacts     Json?    // {report_path, model_path, plot_paths, ...}
+  parent_id     String?  // for lineage/experiment trees
+  parent        Experiment? @relation("ExperimentChildren", fields: [parent_id], references: [id])
+  children      Experiment[] @relation("ExperimentChildren")
+  created_at    DateTime @default(now())
+  completed_at  DateTime?
+  approved_by   String?  // user id or 'auto' if pre-approved rule
+  approved_at   DateTime?
+
+  @@index([agent, status])
+  @@index([created_at])
+  @@index([status])
+}
