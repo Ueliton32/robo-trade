@@ -1,5 +1,6 @@
 import { getKlines, getFundingRate, getOpenInterest, Kline } from './binance';
 import { calcEMA, calcATR } from './indicators';
+import { VOLATILITY_EXPANSION_RATIO } from './regime';
 
 export interface SignalData {
   strategyId: number;
@@ -155,6 +156,25 @@ export function detectRangeBreakout(klines: Kline[], pair: string, timeframe: st
   const breakDown = last.close < rangeLow && last.volume > avgVol * 1.5;
 
   if (!breakUp && !breakDown) return null;
+
+  // Gate de rompimento falso (23/10/2026) — achado na auditoria: nos 10
+  // sinais LONG mais recentes em regime LATERALIZACAO (exatamente o que o
+  // filtro de regime já libera), 0% WR, atrRatio sempre perto de 1.0
+  // (0.78-1.22) — o preço rompia o range sem volatilidade de verdade
+  // sustentando o movimento (fakeout). Exige expansão real de ATR (mesmo
+  // limiar de lib/regime.ts, VOLATILITY_EXPANSION_RATIO) antes de aceitar
+  // o rompimento. Backtest de 6 meses, combinado com o filtro de regime
+  // (scripts/experiment-range-breakout-regime-atr.ts e
+  // scripts/experiment-range-breakout-regime-atr-15m-sweep.ts): validado
+  // em 15m pra BTC/ETH/BNB/TRX/LINK (PF 1.22-1.62); outros pares ficaram
+  // neutros ou negativos mesmo com o gate — não é uma correção universal,
+  // é condicionada ao par (ver lib/pair-strategy-plan.ts pra quais pares
+  // rodam a #1 hoje). Em 1h, o gate some com o sinal quase inteiro (n=0
+  // em todos os 6 pares testados) — sem evidência de que funcione lá.
+  const atrNormal = calcATR(klines.slice(0, -5), 14);
+  const atrRecent = calcATR(klines.slice(-10), 5);
+  const atrRatio = atrNormal > 0 ? atrRecent / atrNormal : 1;
+  if (atrRatio <= VOLATILITY_EXPANSION_RATIO) return null;
 
   const dir = breakUp ? 'LONG' : 'SHORT';
   const entry = last.close;
