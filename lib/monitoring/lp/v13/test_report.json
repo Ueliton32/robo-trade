@@ -1,0 +1,1 @@
+{"test_id":"V1.3_snapshot_robinhood_1370217","position":{"chain":"robinhood","protocol":"uniswapv3","position_id":1370217},"capture_idempotent":true,"duplicate_rejection":true,"schema_version":1,"migration_applied":true,"read_only":true,"note":"captureSnapshot idempotent, no scheduler"}

@@ -36,7 +36,9 @@ const STRUCTURE_MIN_GAP_PCT = 0.3;
 
 // ATR recente 30% acima do normal já é considerado expansão de
 // volatilidade relevante (mesma régua da Compressão de Volatilidade).
-const VOLATILITY_EXPANSION_RATIO = 1.3;
+// Exportado (23/10/2026) pra lib/strategies.ts reusar o mesmo limiar no
+// gate de rompimento falso do Rompimento de Range — ver detectRangeBreakout.
+export const VOLATILITY_EXPANSION_RATIO = 1.3;
 
 // Volume recente abaixo de 30% do volume "normal" do próprio ativo é
 // sinal de liquidez murchando, mesmo que o par esteja no universo.

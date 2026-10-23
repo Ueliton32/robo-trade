@@ -31,7 +31,10 @@
     "monitoring:incident": "tsx --require dotenv/config scripts/monitoring-incident-summary.ts",
     "monitoring:productivity-baseline": "tsx --require dotenv/config scripts/monitoring-productivity-baseline.ts",
     "improvement:backlog": "tsx --require dotenv/config scripts/improvement-backlog.ts",
-    "validate:update": "tsx --require dotenv/config scripts/monitoring-update.ts"
+    "validate:update": "tsx --require dotenv/config scripts/monitoring-update.ts",
+    "lp:snapshot": "npx tsx lib/monitoring/lp/v14/collector.ts",
+    "lp:status": "npx tsx lib/monitoring/lp/v14/status.ts",
+    "experiments": "tsx --require dotenv/config scripts/experiments.ts"
   },
   "prisma": {
     "seed": "tsx --require dotenv/config scripts/safe-seed.ts"
@@ -101,6 +104,7 @@
     "@tanstack/react-query": "5.0.0",
     "autoprefixer": "10.4.15",
     "bcryptjs": "2.4.3",
+    "better-sqlite3": "^13.0.3",
     "chart.js": "4.4.9",
     "class-variance-authority": "0.7.0",
     "clsx": "2.1.1",
@@ -111,6 +115,7 @@
     "dayjs": "1.11.13",
     "dotenv": "16.5.0",
     "embla-carousel-react": "8.3.0",
+    "ethers": "^6.17.0",
     "formik": "2.4.5",
     "framer-motion": "10.18.0",
     "gray-matter": "4.0.3",
