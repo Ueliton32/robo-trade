@@ -1,0 +1,9 @@
+{
+  "name": "20261014113456_init_experiment_registry",
+  "up": [
+    "C:\\Users\\ueliton.filho\\Documents\\Projetos\\Projeto Claude\\robo_trade\\nextjs_space\\prisma\\migrations\\20261014113456_init_experiment_registry\\migration.sql"
+  ],
+  "down": [
+    "C:\\Users\\ueliton.filho\\Documents\\Projetos\\Projeto Claude\\robo_trade\\nextjs_space\\prisma\\migrations\\20261014113456_init_experiment_registry\\migration.sql"
+  ]
+}

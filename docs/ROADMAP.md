@@ -1,0 +1,21 @@
+# ROADMAP.md
+
+FASE 1
+Portfolio Monitor
+STATUS: DONE
+
+FASE 2
+Pool Scanner
+STATUS: VALIDADA
+
+FASE 3
+Opportunity Engine
+STATUS: CONCLUÍDA
+
+FASE 5
+Decision Engine
+STATUS: CONCLUÍDA
+
+FASE FINAL
+Auditoria Geral
+STATUS: PLANNED
