@@ -1,0 +1,40 @@
+name: Robô Trade — check reativação da Estratégia 1
+
+# Roda scripts/check-strategy1-reactivation.ts semanalmente — compara o
+# desempenho real dos sinais fechados nos 5 pares validados
+# (BTC/ETH/BNB/TRX/LINK, 15m, config v18 de 23/10/2026) contra o
+# backtest de 6 meses que justificou a reativação. Não decide nada
+# sozinho, só reporta via notifyOps (Telegram/e-mail pra quem tiver
+# inscrito) — pausar ou ajustar a estratégia continua manual.
+#
+# Requer os mesmos secrets do weekly-stability-scan.yml (Settings →
+# Secrets and variables → Actions):
+#   DATABASE_URL        (obrigatório)
+#   TELEGRAM_BOT_TOKEN   (opcional — só se quiser alerta por Telegram)
+#   SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS, EMAIL_FROM
+#                        (opcionais — só se quiser alerta por e-mail)
+on:
+  schedule:
+    - cron: '0 7 * * 0' # domingo, 07:00 UTC (1h depois do stability-scan)
+  workflow_dispatch: {} # permite rodar manualmente pela aba Actions, pra testar
+
+jobs:
+  check-strategy1-reactivation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npx tsx --require dotenv/config scripts/check-strategy1-reactivation.ts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_SECURE: ${{ secrets.SMTP_SECURE }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
