@@ -33,7 +33,7 @@ import { notifyOps } from './ops-notify';
 import { computeExtendedMetrics, signalRowToEvaluationTrade, EvaluationTrade } from './metrics-extended';
 import { ROUNDTRIP_FEES_PERCENT, ASSUMED_SLIPPAGE_PERCENT } from './trading-costs';
 import { CONSECUTIVE_FAILURES_STATE_KEY } from './system-state-keys';
-import { getGlobalPairStrategyPlan, isComboActive } from './pair-strategy-plan';
+import { getGlobalPairStrategyPlan, isComboActive, PairStrategyPlan } from './pair-strategy-plan';
 import {
   RISK_MAX_DAILY_LOSS_PERCENT,
   RISK_MAX_WEEKLY_LOSS_PERCENT,
@@ -199,6 +199,36 @@ async function checkMaxDrawdown(): Promise<BreakerCheck> {
 const LOSS_STREAK_BATCH = 100;
 const LOSS_STREAK_MAX_ROWS = 2000; // teto de segurança contra varrer o histórico inteiro
 
+export interface LossStreakRow {
+  status: string;
+  pair: string;
+  strategyId: number;
+  direction: string;
+}
+
+/**
+ * Núcleo puro de checkLossStreak — recebe um lote já buscado e o plano
+ * ativo, devolve quantas perdas seguidas tem NESSE lote (só combinações
+ * ainda ativas, ver filterTradesToActiveCombos acima pro mesmo raciocínio)
+ * e se bateu numa vitória (ou linha de combinação inativa ignorada não
+ * conta nem pra manter nem pra parar a sequência). Extraído (23/10/2026)
+ * pra poder testar essa lógica — que já causou 3 incidentes documentados
+ * em produção — sem precisar de banco.
+ */
+export function countActiveLossStreakInBatch(
+  batch: LossStreakRow[],
+  plan: PairStrategyPlan
+): { streak: number; ended: boolean } {
+  let streak = 0;
+  let ended = false;
+  for (const s of batch) {
+    if (!isComboActive(plan, s.pair, s.strategyId, s.direction)) continue;
+    if (s.status === 'LOSS') streak++;
+    else { ended = true; break; }
+  }
+  return { streak, ended };
+}
+
 export async function checkLossStreak(batchSize: number = LOSS_STREAK_BATCH): Promise<BreakerCheck> {
   const plan = await getGlobalPairStrategyPlan();
   let streak = 0;
@@ -212,11 +242,9 @@ export async function checkLossStreak(batchSize: number = LOSS_STREAK_BATCH): Pr
       select: { status: true, pair: true, strategyId: true, direction: true },
     });
     if (!batch.length) break;
-    for (const s of batch) {
-      if (!isComboActive(plan, s.pair, s.strategyId, s.direction)) continue;
-      if (s.status === 'LOSS') streak++;
-      else { ended = true; break; }
-    }
+    const result = countActiveLossStreakInBatch(batch, plan);
+    streak += result.streak;
+    ended = result.ended;
   }
   const threshold = RISK_MAX_CONSECUTIVE_LOSSES;
   return {
@@ -341,6 +369,44 @@ export interface ExposureFilterResult<T> {
  * primeira vez), a ordem é a mesma de antes — o comportamento não muda
  * até o peso existir de verdade.
  */
+/**
+ * Núcleo puro de filterCombosByExposure — dado o que já está pendente por
+ * par (já agregado em contagem) e o teto por par, decide quais combos
+ * cabem e quais pares ficam bloqueados. Quando `weightByStrategy` é
+ * passado, as vagas restantes do par vão pra estratégia de maior peso
+ * primeiro. Extraído (23/10/2026) pra poder testar sem banco.
+ */
+export function allocateComboCapacity<T extends { pair: string; strategyId: number }>(
+  combos: T[],
+  pendingCountByPair: Map<string, number>,
+  maxPerPair: number,
+  weightByStrategy?: Map<number, number>
+): { allowed: T[]; blockedPairs: string[] } {
+  const byPair = new Map<string, T[]>();
+  for (const c of combos) {
+    if (!byPair.has(c.pair)) byPair.set(c.pair, []);
+    byPair.get(c.pair)!.push(c);
+  }
+
+  const blockedPairs: string[] = [];
+  const allowed: T[] = [];
+  for (const [pair, group] of byPair) {
+    const remaining = maxPerPair - (pendingCountByPair.get(pair) ?? 0);
+    if (remaining <= 0) {
+      blockedPairs.push(pair);
+      continue;
+    }
+    const ordered = weightByStrategy
+      ? [...group].sort((a, b) => (weightByStrategy.get(b.strategyId) ?? 1) - (weightByStrategy.get(a.strategyId) ?? 1))
+      : group;
+    const kept = ordered.slice(0, remaining);
+    allowed.push(...kept);
+    if (kept.length < group.length) blockedPairs.push(pair);
+  }
+
+  return { allowed, blockedPairs };
+}
+
 export async function filterCombosByExposure<T extends { pair: string; strategyId: number }>(
   combos: T[],
   weightByStrategy?: Map<number, number>
@@ -357,28 +423,7 @@ export async function filterCombosByExposure<T extends { pair: string; strategyI
   const countByPair = new Map<string, number>();
   for (const p of pending) countByPair.set(p.pair, (countByPair.get(p.pair) ?? 0) + 1);
 
-  const byPair = new Map<string, T[]>();
-  for (const c of combos) {
-    if (!byPair.has(c.pair)) byPair.set(c.pair, []);
-    byPair.get(c.pair)!.push(c);
-  }
-
-  const blockedPairs: string[] = [];
-  const allowed: T[] = [];
-  for (const [pair, group] of byPair) {
-    const remaining = RISK_MAX_OPEN_SIGNALS_PER_PAIR - (countByPair.get(pair) ?? 0);
-    if (remaining <= 0) {
-      blockedPairs.push(pair);
-      continue;
-    }
-    const ordered = weightByStrategy
-      ? [...group].sort((a, b) => (weightByStrategy.get(b.strategyId) ?? 1) - (weightByStrategy.get(a.strategyId) ?? 1))
-      : group;
-    const kept = ordered.slice(0, remaining);
-    allowed.push(...kept);
-    if (kept.length < group.length) blockedPairs.push(pair);
-  }
-
+  const { allowed, blockedPairs } = allocateComboCapacity(combos, countByPair, RISK_MAX_OPEN_SIGNALS_PER_PAIR, weightByStrategy);
   return { allowed, blockedTotal: false, blockedPairs };
 }
 

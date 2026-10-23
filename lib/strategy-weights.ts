@@ -80,32 +80,22 @@ async function loadRecentTrades(strategyId: number, since: Date): Promise<Evalua
   return signals.map(signalRowToEvaluationTrade);
 }
 
+export interface RawStrategySample {
+  strategyId: number;
+  strategyName: string;
+  sampleSize: number;
+  sufficientSample: boolean;
+  expectancyNet: number | null;
+}
+
 /**
- * Calcula (sem persistir) o peso de cada uma das 6 estratégias com base
- * na expectância líquida dos últimos WEIGHTS_LOOKBACK_DAYS dias. Função
- * pura de leitura — quem quiser persistir chama
- * recomputeStrategyWeights() abaixo.
+ * Núcleo puro de computeStrategyWeights — recebe a amostra já calculada
+ * por estratégia (expectância líquida, tamanho de amostra) e devolve os
+ * pesos normalizados. Nenhuma chamada a banco aqui. Extraído (23/10/2026)
+ * pra poder testar a matemática do piso/teto e os casos de neutralidade
+ * sem precisar de dado real.
  */
-export async function computeStrategyWeights(
-  lookbackDays: number = WEIGHTS_LOOKBACK_DAYS
-): Promise<StrategyWeightComputation[]> {
-  const since = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000);
-
-  const raw = await Promise.all(
-    STRATEGY_DEFS.map(async (strat) => {
-      const trades = await loadRecentTrades(strat.id, since);
-      const metrics = computeExtendedMetrics(trades);
-      const sufficientSample = metrics.totalTrades >= MIN_SAMPLE_OVERALL;
-      return {
-        strategyId: strat.id,
-        strategyName: strat.name,
-        sampleSize: metrics.totalTrades,
-        sufficientSample,
-        expectancyNet: sufficientSample ? metrics.expectancyNet : null,
-      };
-    })
-  );
-
+export function normalizeStrategyWeights(raw: RawStrategySample[]): StrategyWeightComputation[] {
   const qualified = raw.filter((r) => r.sufficientSample && r.expectancyNet !== null);
 
   // Menos de 2 estratégias com amostra suficiente = não há base pra
@@ -155,6 +145,35 @@ export async function computeStrategyWeights(
       neutral: false,
     };
   });
+}
+
+/**
+ * Calcula (sem persistir) o peso de cada uma das 6 estratégias com base
+ * na expectância líquida dos últimos WEIGHTS_LOOKBACK_DAYS dias. Função
+ * pura de leitura — quem quiser persistir chama
+ * recomputeStrategyWeights() abaixo.
+ */
+export async function computeStrategyWeights(
+  lookbackDays: number = WEIGHTS_LOOKBACK_DAYS
+): Promise<StrategyWeightComputation[]> {
+  const since = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000);
+
+  const raw = await Promise.all(
+    STRATEGY_DEFS.map(async (strat) => {
+      const trades = await loadRecentTrades(strat.id, since);
+      const metrics = computeExtendedMetrics(trades);
+      const sufficientSample = metrics.totalTrades >= MIN_SAMPLE_OVERALL;
+      return {
+        strategyId: strat.id,
+        strategyName: strat.name,
+        sampleSize: metrics.totalTrades,
+        sufficientSample,
+        expectancyNet: sufficientSample ? metrics.expectancyNet : null,
+      };
+    })
+  );
+
+  return normalizeStrategyWeights(raw);
 }
 
 /**
